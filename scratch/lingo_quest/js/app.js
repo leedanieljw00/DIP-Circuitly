@@ -91,12 +91,28 @@ function render() {
 }
 
 // Initial Render
+// Startup Screen Management
+function removeStartupScreen() {
+    const screen = document.getElementById('startup-screen');
+    if (screen) {
+        // Minimum display time of 1.5s for branding impact
+        setTimeout(() => {
+            screen.classList.add('fade-out');
+            setTimeout(() => {
+                screen.remove();
+            }, 500); // Match CSS transition duration
+        }, 1500);
+    }
+}
+
 // Initial Render
 // Wait for DataService to load CSV
 if (window.DataService && window.DataService.init) {
     window.DataService.init().then(() => {
         render();
+        removeStartupScreen();
     });
 } else {
     render();
+    removeStartupScreen();
 }
