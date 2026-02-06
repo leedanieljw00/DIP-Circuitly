@@ -14,6 +14,7 @@ let State = {
     username: null,
     xp: 0,
     hearts: 5,
+    nextHeartRestoreTime: null,
     activeTopicId: null,
     topicProgress: {}
 };
@@ -41,8 +42,15 @@ const loadUser = async (username) => {
             username: u.username,
             xp: u.xp,
             hearts: u.hearts,
+            nextHeartRestoreTime: u.nextHeartRestoreTime || null,
             topicProgress: u.topicProgress || {}
         };
+
+        // Resume Timer if needed
+        if (State.hearts < 5 && State.nextHeartRestoreTime) {
+            startHeartTimer();
+        }
+
         render();
     } else {
         window.AuthService.logout();
@@ -57,6 +65,7 @@ const syncState = () => {
         window.AuthService.saveProgress({
             xp: State.xp,
             hearts: State.hearts,
+            nextHeartRestoreTime: State.nextHeartRestoreTime,
             topicProgress: State.topicProgress
         });
     }
@@ -71,7 +80,10 @@ function render() {
         header.className = 'header-bar';
         header.innerHTML = `
             <div class="stats-container">
-                <div class="stat-pill glass-pill"><span style="margin-right:8px">❤️</span> ${State.hearts}</div>
+                <div class="stat-pill glass-pill">
+                    <span style="margin-right:8px">❤️</span> ${State.hearts}
+                    <span id="heart-timer" style="font-size: 0.8em; margin-left: 8px; color: var(--text-muted);"></span>
+                </div>
                 <div class="stat-pill glass-pill accent-pill"><span style="margin-right:8px">⚡</span> ${State.xp} XP</div>
                 <div class="stat-pill glass-pill" style="color:var(--text-muted); cursor:pointer;" id="logout-btn">
                     👤 ${State.username} (Log Out)
@@ -121,6 +133,10 @@ function render() {
                 component = window.Home({
                     topicProgress: State.topicProgress,
                     onStart: (topicId) => {
+                        if (State.hearts <= 0) {
+                            alert("You have no hearts left! Wait for them to restore.");
+                            return;
+                        }
                         State.activeTopicId = topicId;
                         State.view = ROUTES.QUIZ;
                         render(); // No save needed just for navigation, usually
@@ -133,14 +149,46 @@ function render() {
             if (window.Quiz) {
                 component = window.Quiz({
                     topicId: State.activeTopicId,
-                    onComplete: (score) => {
-                        State.xp += score;
+                    onComplete: (result) => {
+                        // Result is now object: { score, correctCount, totalQuestions }
+                        // Or legacy: number (handle backwards compat if needed, but we updated Quiz.js)
 
-                        // Update Progress
-                        if (!State.topicProgress[State.activeTopicId]) {
-                            State.topicProgress[State.activeTopicId] = { xp: 0 };
+                        let earnedScore = 0;
+                        let passed = false;
+
+                        if (typeof result === 'object') {
+                            const percentage = (result.correctCount / result.totalQuestions) * 100;
+                            if (percentage >= 80) {
+                                passed = true;
+                                earnedScore = result.score;
+                            }
+                        } else {
+                            // Fallback (shouldn't happen with new Quiz.js)
+                            earnedScore = result;
+                            passed = true;
                         }
-                        State.topicProgress[State.activeTopicId].xp += score;
+
+                        if (passed) {
+                            State.xp += earnedScore;
+
+                            // Update Progress
+                            if (!State.topicProgress[State.activeTopicId]) {
+                                State.topicProgress[State.activeTopicId] = { xp: 0 };
+                            }
+                            State.topicProgress[State.activeTopicId].xp += earnedScore;
+
+                        } else {
+                            // Failed: Deduct Heart
+                            if (State.hearts > 0) {
+                                State.hearts--;
+
+                                // Initiate Timer if this was the first heart lost (or just ensure timer is set)
+                                if (State.hearts < 5 && !State.nextHeartRestoreTime) {
+                                    State.nextHeartRestoreTime = Date.now() + (60 * 60 * 1000); // 60 minutes
+                                    startHeartTimer();
+                                }
+                            }
+                        }
 
                         syncState(); // Save to Profile
 
@@ -157,6 +205,65 @@ function render() {
     }
 
     if (component) app.appendChild(component);
+}
+
+// Heart Timer Logic
+let heartInterval = null;
+
+function startHeartTimer() {
+    if (heartInterval) clearInterval(heartInterval);
+
+    const updateTimerDisplay = () => {
+        if (!State.nextHeartRestoreTime) {
+            // Clean up if fully restored
+            clearInterval(heartInterval);
+            heartInterval = null;
+            const el = document.getElementById('heart-timer');
+            if (el) el.textContent = '';
+            return;
+        }
+
+        const now = Date.now();
+        const diff = State.nextHeartRestoreTime - now;
+
+        if (diff <= 0) {
+            // Restore Heart
+            State.hearts++;
+
+            if (State.hearts >= 5) {
+                State.hearts = 5;
+                State.nextHeartRestoreTime = null;
+                clearInterval(heartInterval);
+                heartInterval = null;
+            } else {
+                // Reset timer for NEXT heart
+                State.nextHeartRestoreTime = Date.now() + (60 * 60 * 1000);
+            }
+
+            syncState();
+
+            // Only re-render header info if we are in a view that shows it
+            // Ideally we just update the DOM elements directly to avoid flicker
+            const heartCountEl = document.querySelector('.stats-container .stat-pill');
+            if (heartCountEl) {
+                // Simple re-render to catch everything or manual DOM update
+                // Manual update is safer for preserving input state if any, but render() is fine for this app structure
+                render();
+                return;
+            }
+        }
+
+        // Update Display text
+        const el = document.getElementById('heart-timer');
+        if (el) {
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            el.textContent = `(+1 in ${m}:${s.toString().padStart(2, '0')})`;
+        }
+    };
+
+    heartInterval = setInterval(updateTimerDisplay, 1000);
+    updateTimerDisplay(); // Immediate run
 }
 
 // Initial Boot

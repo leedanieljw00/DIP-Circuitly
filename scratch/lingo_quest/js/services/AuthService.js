@@ -39,6 +39,7 @@ window.AuthService = {
             username: username,
             xp: 0,
             hearts: 5,
+            nextHeartRestoreTime: null, // timestamp when next heart restores
             topicProgress: {},
             created: new Date().toISOString()
         };
@@ -65,6 +66,9 @@ window.AuthService = {
             // Update fields
             users[currentUser].xp = userData.xp;
             users[currentUser].hearts = userData.hearts;
+            if (userData.nextHeartRestoreTime !== undefined) {
+                users[currentUser].nextHeartRestoreTime = userData.nextHeartRestoreTime;
+            }
             users[currentUser].topicProgress = userData.topicProgress;
 
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));

@@ -124,16 +124,14 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
 
     let selectedOption = null;
     let isAnswered = false;
+    let correctCount = 0; // New tracking
     const incorrectResponses = [];
 
     function renderQuestion() {
         if (currentIndex >= questions.length) {
             feedbackOverlay.remove();
-            if (incorrectResponses.length > 0) {
-                renderReviewScreen();
-            } else {
-                onComplete(score);
-            }
+            // Always show review screen now to show Pass/Fail status clearly
+            renderReviewScreen();
             return;
         }
 
@@ -198,19 +196,36 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         });
     }
 
-    // Review Screen Logic (Kept mostly logic-same, just styled)
+    // Review Screen Logic
     function renderReviewScreen() {
         container.innerHTML = '';
         container.style.height = 'auto';
         container.style.paddingTop = '40px';
         container.style.justifyContent = 'flex-start';
 
+        // Calculate functionality
+        const total = questions.length;
+        const percentage = Math.round((correctCount / total) * 100);
+        const passed = percentage >= 80;
+
         const title = document.createElement('h1');
         title.className = 'brand-title';
         title.style.fontSize = '2.5rem';
         title.style.textAlign = 'center';
-        title.textContent = 'Session Review';
+        title.textContent = passed ? 'Module Passed!' : 'Module Failed';
+        title.style.color = passed ? 'var(--accent)' : 'var(--error)';
         container.appendChild(title);
+
+        const subTitle = document.createElement('div');
+        subTitle.style.textAlign = 'center';
+        subTitle.style.marginBottom = '30px';
+        subTitle.style.color = 'var(--text-main)';
+        subTitle.innerHTML = `
+            <h2 style="font-size: 1.5rem; margin-bottom: 8px;">Score: ${percentage}%</h2>
+            <p style="color: var(--text-muted);">${correctCount} / ${total} Correct</p>
+            ${!passed ? '<p style="color: var(--error); margin-top: 8px;">You need 80% to pass. A heart has been lost.</p>' : '<p style="color: var(--accent); margin-top: 8px;">Great job! +XP awarded.</p>'}
+        `;
+        container.appendChild(subTitle);
 
         const list = document.createElement('div');
         list.style.display = 'flex';
@@ -233,7 +248,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             }
 
             card.innerHTML = `
-                <div style="font-weight:700; margin-bottom:12px; color:var(--text-main); font-size:1.1rem;">${idx + 1}. ${item.question}</div>
+                <div style="font-weight:700; margin-bottom:12px; color:var(--text-main); font-size:1.1rem;">Question: ${item.question}</div>
                 ${imgHTML}
                 <div style="margin-bottom:8px; color:var(--error);">Your Answer: ${item.userAnswer}</div>
                 <div style="margin-bottom:16px; color:var(--accent);">Correct Answer: ${item.correctAnswer}</div>
@@ -251,7 +266,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         finishBtn.style.margin = '40px auto';
         finishBtn.style.width = '100%';
         finishBtn.style.maxWidth = '300px';
-        finishBtn.onclick = () => onComplete(score);
+        finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total });
         container.appendChild(finishBtn);
     }
 
@@ -267,6 +282,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
 
             if (isCorrect) {
                 score += 10;
+                correctCount++; // Increment correct count
                 // Adaptive Logic
                 if (Number(topicId) === 8 && adaptiveStats.mode === 'THEORY') {
                     adaptiveStats.recoveryCount++;
