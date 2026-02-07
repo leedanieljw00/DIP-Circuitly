@@ -2,6 +2,8 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     const questions = window.DataService.getQuestions(topicId);
     let currentIndex = 0;
     let score = 0;
+    let sessionTime = 0; // Seconds
+    let questionStartTime = Date.now();
 
     // Adaptive State
     const adaptiveStats = {
@@ -164,6 +166,8 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         checkBtn.textContent = 'CHECK ANSWER';
         checkBtn.disabled = true;
         checkBtn.style.opacity = '0.5';
+
+        questionStartTime = Date.now();
 
         q.options.forEach(opt => {
             const btn = document.createElement('button');

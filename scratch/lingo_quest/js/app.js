@@ -5,7 +5,8 @@ const ROUTES = {
     LOGIN: 'login',
     HOME: 'home',
     QUIZ: 'quiz',
-    RESULT: 'result'
+    RESULT: 'result',
+    PROFILES: 'profiles'
 };
 
 // Global State
@@ -197,6 +198,25 @@ function render() {
                     },
                     onExit: () => {
                         State.view = ROUTES.HOME;
+                        render();
+                    }
+                });
+            }
+            break;
+        case ROUTES.PROFILES:
+            if (window.ProfileManager) {
+                component = window.ProfileManager({
+                    onBack: () => {
+                        State.view = ROUTES.HOME;
+                        saveState();
+                        render();
+                    },
+                    onProfileSwitched: () => {
+                        // Reload State from new profile
+                        const newState = loadState();
+                        Object.assign(State, newState);
+                        // Stay in Profiles or go Home? Let's stay in Profiles to see the switch
+                        State.view = ROUTES.PROFILES;
                         render();
                     }
                 });
