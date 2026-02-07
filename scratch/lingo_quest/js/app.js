@@ -6,7 +6,8 @@ const ROUTES = {
     HOME: 'home',
     QUIZ: 'quiz',
     RESULT: 'result',
-    PROFILES: 'profiles'
+    PROFILES: 'profiles',
+    ADMIN: 'admin'
 };
 
 // Global State
@@ -17,56 +18,49 @@ let State = {
     hearts: 5,
     nextHeartRestoreTime: null,
     activeTopicId: null,
-    topicProgress: {}
+    topicProgress: {},
+    isAdmin: false
 };
 
 // --- INIT ---
 const initApp = async () => {
-    // Check for existing session
-    const currentUser = window.AuthService.getCurrentUser();
+    // Always start at Profile Selection / Login
+    // Check for existing session slightly differently: Maybe pre-load but don't auto-navigate?
+    // User request: "login page is at the start whenever the app opens"
 
-    if (currentUser) {
-        await loadUser(currentUser);
-    } else {
-        State.view = ROUTES.LOGIN;
-        render();
-    }
+    // We can still get the active profile to highlight/select, but we don't call loadUser() immediately.
+    State.view = ROUTES.LOGIN;
+    render();
 };
 
-const loadUser = async (username) => {
-    const users = await window.AuthService.getUsers();
-    if (users[username]) {
-        const u = users[username];
-        State = {
-            ...State,
-            view: ROUTES.HOME,
-            username: u.username,
-            xp: u.xp,
-            hearts: u.hearts,
-            nextHeartRestoreTime: u.nextHeartRestoreTime || null,
-            topicProgress: u.topicProgress || {}
-        };
+const loadUser = (profile) => {
+    State = {
+        ...State,
+        view: profile.role === 'admin' ? ROUTES.ADMIN : ROUTES.HOME,
+        username: profile.name, // Display Name
+        studentId: profile.studentId,
+        xp: profile.xp,
+        hearts: profile.hearts,
+        nextHeartRestoreTime: profile.lastActive ? null : null, // Todo: Heart logic in ProfileService if needed
+        topicProgress: profile.topicProgress || {},
+        isAdmin: profile.role === 'admin'
+    };
+    /* 
+       Note: Heart Timer logic was based on "nextHeartRestoreTime" in State.
+       ProfileService currently just stores 'hearts'. 
+       If we want to persist timer, we need to add that to ProfileService.
+       For now, let's keep it simple: Reset to 5 on new session or keep current behavior if we want.
+       Let's assume we just load what's there. 
+    */
 
-        // Resume Timer if needed
-        if (State.hearts < 5 && State.nextHeartRestoreTime) {
-            startHeartTimer();
-        }
-
-        render();
-    } else {
-        window.AuthService.logout();
-        State.view = ROUTES.LOGIN;
-        render();
-    }
+    render();
 };
 
-// Sync State to Auth Service (Auto-Save)
 const syncState = () => {
-    if (State.username) {
-        window.AuthService.saveProgress({
+    if (State.studentId) {
+        window.ProfileService.updateProgress(State.studentId, {
             xp: State.xp,
             hearts: State.hearts,
-            nextHeartRestoreTime: State.nextHeartRestoreTime,
             topicProgress: State.topicProgress
         });
     }
@@ -75,35 +69,84 @@ const syncState = () => {
 function render() {
     app.innerHTML = ''; // Clear
 
-    // Header (Only show if logged in and NOT on login page)
-    if (State.view !== ROUTES.LOGIN) {
+    // Header (Only show if logged in and NOT on login or profiles page)
+    if (State.view !== ROUTES.LOGIN && State.view !== ROUTES.PROFILES) {
         const header = document.createElement('div');
         header.className = 'header-bar';
-        header.innerHTML = `
-            <div class="stats-container">
-                <div class="stat-pill glass-pill">
-                    <span style="margin-right:8px">❤️</span> ${State.hearts}
-                    <span id="heart-timer" style="font-size: 0.8em; margin-left: 8px; color: var(--text-muted);"></span>
+
+        if (State.isAdmin) {
+            header.innerHTML = `
+                <div class="stats-container">
+                    <div class="stat-pill glass-pill accent-pill">ADMINISTRATOR</div>
+                    <div class="stat-pill glass-pill" style="cursor:pointer; background:rgba(255, 50, 50, 0.2);" id="logout-btn">
+                        🚪 Log Out
+                    </div>
                 </div>
-                <div class="stat-pill glass-pill accent-pill"><span style="margin-right:8px">⚡</span> ${State.xp} XP</div>
-                <div class="stat-pill glass-pill" style="color:var(--text-muted); cursor:pointer;" id="logout-btn">
-                    👤 ${State.username} (Log Out)
+            `;
+        } else {
+            header.innerHTML = `
+                <div class="stats-container">
+                    <div class="stat-pill glass-pill" id="heart-btn" style="cursor:pointer" title="Click to refill">
+                        <span style="margin-right:8px">❤️</span> ${State.hearts}
+                    </div>
+                    <div class="stat-pill glass-pill accent-pill"><span style="margin-right:8px">⚡</span> ${State.xp} XP</div>
+                    
+                    <!-- Profile Menu -->
+                    <div class="stat-pill glass-pill" style="cursor:pointer; margin-right: 8px;" id="profile-btn" title="Profile Details">
+                         👤 ${State.username}
+                    </div>
+
+                    <!-- Logout Button -->
+                    <div class="stat-pill glass-pill" style="cursor:pointer; background: rgba(255, 50, 50, 0.2); border: 1px solid rgba(255, 50, 50, 0.3);" id="logout-btn" title="Log Out">
+                         🚪
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
+
         app.appendChild(header);
 
-        // Bind Logout
+        // Bind Buttons
         setTimeout(() => {
-            const btn = document.getElementById('logout-btn');
-            if (btn) btn.onclick = () => {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) logoutBtn.onclick = () => {
                 if (confirm('Log out?')) {
-                    window.AuthService.logout();
+                    // Clear Logic
                     State.username = null;
+                    State.studentId = null;
+                    State.xp = 0;
+                    State.hearts = 5;
+                    State.topicProgress = {};
+                    State.isAdmin = false;
                     State.view = ROUTES.LOGIN;
                     render();
                 }
             };
+
+            if (!State.isAdmin) {
+                // Profile Button -> Go to Stats Chart (Bypass Profile Manager)
+                const profileBtn = document.getElementById('profile-btn');
+                if (profileBtn) profileBtn.onclick = () => {
+                    const profile = window.ProfileService.getActiveProfile();
+                    if (profile && window.StatsChart) {
+                        window.StatsChart({ stats: profile.stats });
+                    } else {
+                        alert("Stats not available.");
+                    }
+                };
+
+                const heartBtn = document.getElementById('heart-btn');
+                if (heartBtn) heartBtn.onclick = () => {
+                    if (confirm('Refill hearts to MAX?')) {
+                        State.hearts = 5;
+                        State.nextHeartRestoreTime = null;
+                        if (window.ProfileService) {
+                            window.ProfileService.updateProgress(State.studentId, { hearts: 5 });
+                        }
+                        render();
+                    }
+                };
+            }
         }, 0);
     }
 
@@ -113,17 +156,24 @@ function render() {
         case ROUTES.LOGIN:
             if (window.Login) {
                 component = window.Login({
-                    onLogin: (username) => {
-                        window.AuthService.login(username).then(res => {
-                            if (res.success) loadUser(username);
-                            else alert(res.error);
-                        });
+                    onLogin: (username, password) => {
+                        const result = window.ProfileService.authenticate(username, password);
+                        if (result.success) {
+                            loadUser(result.profile);
+                        } else {
+                            alert(result.error);
+                        }
                     },
-                    onRegister: (username) => {
-                        window.AuthService.register(username).then(res => {
-                            if (res.success) loadUser(username);
-                            else alert(res.error);
-                        });
+                    onRegister: (data) => {
+                        const result = window.ProfileService.addProfile(data);
+                        if (result.success) {
+                            // Auto login after signup? Or ask to login?
+                            // Let's auto-login for better UX
+                            const auth = window.ProfileService.authenticate(data.username, data.password);
+                            if (auth.success) loadUser(auth.profile);
+                        } else {
+                            alert(result.error);
+                        }
                     }
                 });
             }
@@ -140,7 +190,7 @@ function render() {
                         }
                         State.activeTopicId = topicId;
                         State.view = ROUTES.QUIZ;
-                        render(); // No save needed just for navigation, usually
+                        render();
                     }
                 });
             }
@@ -151,48 +201,42 @@ function render() {
                 component = window.Quiz({
                     topicId: State.activeTopicId,
                     onComplete: (result) => {
-                        // Result is now object: { score, correctCount, totalQuestions }
-                        // Or legacy: number (handle backwards compat if needed, but we updated Quiz.js)
-
+                        // Result: { score, correctCount, totalQuestions, timeSpent }
                         let earnedScore = 0;
                         let passed = false;
+                        let timeSpent = result.timeSpent || 0;
 
-                        if (typeof result === 'object') {
-                            const percentage = (result.correctCount / result.totalQuestions) * 100;
-                            if (percentage >= 80) {
-                                passed = true;
-                                earnedScore = result.score;
-                            }
-                        } else {
-                            // Fallback (shouldn't happen with new Quiz.js)
-                            earnedScore = result;
+                        const percentage = (result.correctCount / result.totalQuestions) * 100;
+                        if (percentage >= 80) {
                             passed = true;
                         }
 
+                        // Always award XP for correct answers (1 XP per correct answer)
+                        // This ensures XP reflects number of correctly answered questions even if failed
+                        earnedScore = result.score;
+
+                        // Update Global XP
+                        State.xp += earnedScore;
+
+                        // Update Local Topic Progress
+                        if (!State.topicProgress[State.activeTopicId]) {
+                            State.topicProgress[State.activeTopicId] = { xp: 0 };
+                        }
+                        State.topicProgress[State.activeTopicId].xp += earnedScore;
+
+                        // Update Stats via Service (XP + Time)
+                        window.ProfileService.updateStats(State.studentId, State.activeTopicId, earnedScore, timeSpent);
+
                         if (passed) {
-                            State.xp += earnedScore;
-
-                            // Update Progress
-                            if (!State.topicProgress[State.activeTopicId]) {
-                                State.topicProgress[State.activeTopicId] = { xp: 0 };
-                            }
-                            State.topicProgress[State.activeTopicId].xp += earnedScore;
-
+                            // Logic for passing (could unlock next level or show badge, currently just flag)
                         } else {
                             // Failed: Deduct Heart
                             if (State.hearts > 0) {
                                 State.hearts--;
-
-                                // Initiate Timer if this was the first heart lost (or just ensure timer is set)
-                                if (State.hearts < 5 && !State.nextHeartRestoreTime) {
-                                    State.nextHeartRestoreTime = Date.now() + (60 * 60 * 1000); // 60 minutes
-                                    startHeartTimer();
-                                }
                             }
                         }
 
-                        syncState(); // Save to Profile
-
+                        syncState(); // Save basic state
                         State.view = ROUTES.HOME;
                         render();
                     },
@@ -207,19 +251,27 @@ function render() {
             if (window.ProfileManager) {
                 component = window.ProfileManager({
                     onBack: () => {
-                        State.view = ROUTES.HOME;
-                        saveState();
-                        render();
+                        if (State.studentId) {
+                            State.view = ROUTES.HOME;
+                            render();
+                        } else {
+                            // If no user, stay here or warn
+                            alert("Please select a profile first.");
+                        }
                     },
                     onProfileSwitched: () => {
-                        // Reload State from new profile
-                        const newState = loadState();
-                        Object.assign(State, newState);
-                        // Stay in Profiles or go Home? Let's stay in Profiles to see the switch
-                        State.view = ROUTES.PROFILES;
-                        render();
+                        const profile = window.ProfileService.getActiveProfile();
+                        if (profile) {
+                            loadUser(profile);
+                        }
                     }
                 });
+            }
+            break;
+
+        case ROUTES.ADMIN:
+            if (window.AdminDashboard) {
+                component = window.AdminDashboard({});
             }
             break;
     }

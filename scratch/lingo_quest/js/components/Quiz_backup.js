@@ -270,7 +270,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         finishBtn.style.margin = '40px auto';
         finishBtn.style.width = '100%';
         finishBtn.style.maxWidth = '300px';
-        finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total, timeSpent: sessionTime });
+        finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total });
         container.appendChild(finishBtn);
     }
 
@@ -279,18 +279,13 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             const q = questions[currentIndex];
             isAnswered = true;
 
-            // Calculate time for this question
-            const now = Date.now();
-            const timeForQ = (now - questionStartTime) / 1000;
-            sessionTime += timeForQ;
-
             // Logic identical to before
             const isCorrect = (selectedOption === q.correctAnswer);
 
             feedbackOverlay.innerHTML = '';
 
             if (isCorrect) {
-                score += 1;
+                score += 10;
                 correctCount++; // Increment correct count
                 // Adaptive Logic
                 if (Number(topicId) === 8 && adaptiveStats.mode === 'THEORY') {

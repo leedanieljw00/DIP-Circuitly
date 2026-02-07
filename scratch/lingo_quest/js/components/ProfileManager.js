@@ -11,10 +11,6 @@ window.ProfileManager = function ({ onBack, onProfileSwitched }) {
     header.style.alignItems = 'center';
     header.style.marginBottom = '24px';
 
-    const title = document.createElement('h2');
-    title.textContent = "Manage Profiles";
-    header.appendChild(title);
-
     const backBtn = document.createElement('button');
     backBtn.textContent = '← MENU';
     backBtn.className = 'btn btn-secondary';
@@ -22,6 +18,10 @@ window.ProfileManager = function ({ onBack, onProfileSwitched }) {
     backBtn.style.fontSize = '0.9rem';
     backBtn.onclick = onBack;
     header.appendChild(backBtn);
+
+    const title = document.createElement('h2');
+    title.textContent = "Manage Profiles";
+    header.appendChild(title);
 
     container.appendChild(header);
 
@@ -176,8 +176,8 @@ window.ProfileManager = function ({ onBack, onProfileSwitched }) {
                 statsBtn.style.marginBottom = '0';
                 statsBtn.onclick = () => {
                     if (window.StatsChart) {
-                        // Use topicProgress for charts
-                        window.StatsChart({ stats: p.topicProgress });
+                        // Use stats (XP + Time) for charts, not just topicProgress
+                        window.StatsChart({ stats: p.stats });
                     } else {
                         alert("Charts not loaded");
                     }
