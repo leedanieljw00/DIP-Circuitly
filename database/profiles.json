@@ -1,0 +1,24 @@
+[
+  {
+    "name": "John Tan",
+    "studentId": "U1234560C",
+    "classGroup": "EE01",
+    "username": "John",
+    "password": "123456",
+    "createdAt": "2026-02-10T10:28:21.232Z",
+    "xp": 37,
+    "hearts": 5,
+    "topicProgress": {
+      "1": {
+        "xp": 37
+      }
+    },
+    "stats": {
+      "1": {
+        "xp": 37,
+        "time": 288.16499999999996
+      }
+    },
+    "lastActive": "2026-02-10T10:37:46.061Z"
+  }
+]
