@@ -1,7 +1,7 @@
 // Main App Entry
 const app = document.getElementById('app');
 
-const ROUTES = {
+const ROUTES = { // constant object used as maps like buttons on an elevator
     LOGIN: 'login',
     HOME: 'home',
     QUIZ: 'quiz',
@@ -10,7 +10,7 @@ const ROUTES = {
 
 // Global State
 let State = {
-    view: ROUTES.LOGIN,
+    view: ROUTES.LOGIN,// Update state.view when changing pages
     username: null,
     xp: 0,
     hearts: 5,
@@ -22,13 +22,13 @@ let State = {
 // --- INIT ---
 const initApp = async () => {
     // Check for existing session
-    const currentUser = window.AuthService.getCurrentUser();
+    const currentUser = window.AuthService.getCurrentUser(); // app.js calls AuthService.getCurrentUser() to check if user is logged in
 
     if (currentUser) {
         await loadUser(currentUser);
     } else {
         State.view = ROUTES.LOGIN;
-        render();
+        render(); // everytime render runs, it deletes everything in app and rebuilds based on current state.vie
     }
 };
 
@@ -36,7 +36,7 @@ const loadUser = async (username) => {
     const users = await window.AuthService.getUsers();
     if (users[username]) {
         const u = users[username];
-        State = {
+        State = { // loads user data into state, user is directed to home page
             ...State,
             view: ROUTES.HOME,
             username: u.username,
@@ -71,7 +71,7 @@ const syncState = () => {
     }
 };
 
-function render() {
+function render() { // Inside render, code looks at state.view and matches it against ROUTES
     app.innerHTML = ''; // Clear
 
     // Header (Only show if logged in and NOT on login page)

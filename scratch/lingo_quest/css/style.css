@@ -6,6 +6,7 @@
     --primary: #3b82f6;
     /* Brilliant Blue */
     --primary-glow: rgba(59, 130, 246, 0.5);
+    /* uses transparent colours for the neon shadow effect*/
 
     --secondary: #a855f7;
     /* Neon Purple */
@@ -33,6 +34,7 @@
 
 * {
     box-sizing: border-box;
+    /* ensures that padding and borders added stay within the element's total width and height*/
     margin: 0;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
@@ -42,6 +44,7 @@ body {
     font-family: var(--font-stack);
     background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
     background-attachment: fixed;
+    /* ensures background stays while content scrolls, creates sense of depth*/
     /* Full screen fix */
     color: var(--text-main);
     overflow-x: hidden;
@@ -143,8 +146,10 @@ body {
 
 /* Grids */
 .topic-grid {
+    /* used for 2D layouts of your quiz topics */
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* tells the grid to automatically fill the available space with as many columns as possible, with each column being at least 280px wide*/
     gap: 24px;
     width: 100%;
 }
@@ -152,10 +157,14 @@ body {
 /* Cards */
 .card-glass {
     background: var(--surface);
+    /* very feint background that acts as the "glass" surface*/
     backdrop-filter: blur(12px);
+    /* creates the frosted glass effect by blurring the background*/
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--surface-border);
+    /* gives the card a sharp and realistic edge*/
     border-radius: var(--border-radius-lg);
+    /* rounds the corners of the card*/
     padding: 24px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -267,6 +276,7 @@ body {
 
 /* Header Bar & Stats */
 .header-bar {
+    /* used for 1D layouts */
     position: absolute;
     top: 0;
     left: 0;
