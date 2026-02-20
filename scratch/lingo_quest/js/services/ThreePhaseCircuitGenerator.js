@@ -52,10 +52,10 @@ window.ThreePhaseCircuitGenerator = {
 
         if (inputType === 'Line') {
             V_line = baseVolts;
-            voltagePrompText = `V<sub>line</sub> = ${V_line}V`;
+            voltagePrompText = `$V_{\\text{line}} = ${V_line}V$`;
         } else {
             V_source_phase = baseVolts;
-            voltagePrompText = `Source V<sub>phase</sub> = ${V_source_phase}V`;
+            voltagePrompText = `Source $V_{\\text{phase}} = ${V_source_phase}V$`;
             // Calculate Line Voltage based on Source Config
             if (sourceConfig === 'Wye') {
                 V_line = V_source_phase * Math.sqrt(3);
@@ -90,19 +90,19 @@ window.ThreePhaseCircuitGenerator = {
         const val3 = 10 + Math.floor(Math.random() * 20);
 
         if (loadType === 'R') {
-            R = val1; Z_mag = R; componentValueStr = `R=${R}Ω`;
+            R = val1; Z_mag = R; componentValueStr = `$R=${R}\\Omega$`;
         } else if (loadType === 'L') {
-            XL = val1; Z_mag = XL; componentValueStr = `X<sub>L</sub>=${XL}Ω`;
+            XL = val1; Z_mag = XL; componentValueStr = `$X_L=${XL}\\Omega$`;
         } else if (loadType === 'C') {
-            XC = val1; Z_mag = XC; componentValueStr = `X<sub>C</sub>=${XC}Ω`;
+            XC = val1; Z_mag = XC; componentValueStr = `$X_C=${XC}\\Omega$`;
         } else if (loadType === 'RL_Series') {
             R = val1; XL = val2;
             Z_mag = Math.sqrt(R * R + XL * XL);
-            componentValueStr = `R=${R}Ω, X<sub>L</sub>=${XL}Ω`;
+            componentValueStr = `$R=${R}\\Omega, X_L=${XL}\\Omega$`;
         } else if (loadType === 'RC_Series') {
             R = val1; XC = val2;
             Z_mag = Math.sqrt(R * R + XC * XC);
-            componentValueStr = `R=${R}Ω, X<sub>C</sub>=${XC}Ω`;
+            componentValueStr = `$R=${R}\\Omega, X_C=${XC}\\Omega$`;
         } else if (loadType === 'RL_Parallel') {
             R = val1; XL = val2;
             const Y = Math.sqrt(Math.pow(1 / R, 2) + Math.pow(1 / XL, 2));
@@ -137,24 +137,24 @@ window.ThreePhaseCircuitGenerator = {
         let sourceExp = "";
         if (inputType === 'Phase') {
             if (sourceConfig === 'Wye') {
-                sourceExp = `Source is Wye: V<sub>line</sub> = √3 × V<sub>source,phase</sub> = √3 × ${V_source_phase} ≈ ${V_line.toFixed(1)}V. `;
+                sourceExp = `Source is Wye: $V_{\\text{line}} = \\sqrt{3} \\times V_{\\text{source,phase}} = \\sqrt{3} \\times ${V_source_phase} \\approx ${V_line.toFixed(1)}V$. `;
             } else {
-                sourceExp = `Source is Delta: V<sub>line</sub> = V<sub>source,phase</sub> = ${V_line.toFixed(1)}V. (In Delta, Line Voltage equals Phase Voltage). `;
+                sourceExp = `Source is Delta: $V_{\\text{line}} = V_{\\text{source,phase}} = ${V_line.toFixed(1)}V$. (In Delta, Line Voltage equals Phase Voltage). `;
             }
         } else {
-            sourceExp = `Given V<sub>line</sub> = ${V_line}V. `;
+            sourceExp = `Given $V_{\\text{line}} = ${V_line}V$. `;
         }
 
         // Load Calculation Explanation
         if (loadConfig === 'Wye') {
             V_load_phase = V_line / Math.sqrt(3);
             I_line = V_load_phase / Z_mag;
-            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Wye connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Wye, V<sub>phase</sub> = V<sub>line</sub> / √3.<br>V<sub>load,phase</sub> = ${V_line.toFixed(1)} / √3 ≈ ${V_load_phase.toFixed(1)}V.<br><strong>Step 3:</strong> Calculate Current. |Z| = ${Z_mag.toFixed(1)}Ω.<br>I<sub>phase</sub> = V<sub>load,phase</sub> / |Z| = ${V_load_phase.toFixed(1)} / ${Z_mag.toFixed(1)} ≈ ${(V_load_phase / Z_mag).toFixed(1)}A.<br><strong>Step 4:</strong> In Wye, Line Current equals Phase Current.<br>I<sub>line</sub> = I<sub>phase</sub>.`;
+            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Wye connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Wye, $V_{\\text{phase}} = \\frac{V_{\\text{line}}}{\\sqrt{3}}$.<br>$V_{\\text{load,phase}} = \\frac{${V_line.toFixed(1)}}{\\sqrt{3}} \\approx ${V_load_phase.toFixed(1)}V$.<br><strong>Step 3:</strong> Calculate Current. $|Z| = ${Z_mag.toFixed(1)}\\Omega$.<br>$I_{\\text{phase}} = \\frac{V_{\\text{load,phase}}}{|Z|} = \\frac{${V_load_phase.toFixed(1)}}{${Z_mag.toFixed(1)}} \\approx ${(V_load_phase / Z_mag).toFixed(1)}A$.<br><strong>Step 4:</strong> In Wye, Line Current equals Phase Current.<br>$I_{\\text{line}} = I_{\\text{phase}}$.`;
         } else {
             V_load_phase = V_line;
             const I_phase = V_load_phase / Z_mag;
             I_line = I_phase * Math.sqrt(3);
-            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Delta connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Delta, V<sub>phase</sub> = V<sub>line</sub>.<br>V<sub>load,phase</sub> = ${V_load_phase.toFixed(1)}V.<br><strong>Step 3:</strong> Calculate Phase Current. |Z| = ${Z_mag.toFixed(1)}Ω.<br>I<sub>phase</sub> = V<sub>load,phase</sub> / |Z| = ${V_load_phase.toFixed(1)} / ${Z_mag.toFixed(1)} ≈ ${I_phase.toFixed(1)}A.<br><strong>Step 4:</strong> Calculate Line Current. In Delta, I<sub>line</sub> = I<sub>phase</sub> × √3.<br>I<sub>line</sub> = ${I_phase.toFixed(1)} × √3.`;
+            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Delta connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Delta, $V_{\\text{phase}} = V_{\\text{line}}$.<br>$V_{\\text{load,phase}} = ${V_load_phase.toFixed(1)}V$.<br><strong>Step 3:</strong> Calculate Phase Current. $|Z| = ${Z_mag.toFixed(1)}\\Omega$.<br>$I_{\\text{phase}} = \\frac{V_{\\text{load,phase}}}{|Z|} = \\frac{${V_load_phase.toFixed(1)}}{${Z_mag.toFixed(1)}} \\approx ${I_phase.toFixed(1)}A$.<br><strong>Step 4:</strong> Calculate Line Current. In Delta, $I_{\\text{line}} = I_{\\text{phase}} \\times \\sqrt{3}$.<br>$I_{\\text{line}} = ${I_phase.toFixed(1)} \\times \\sqrt{3}$.`;
         }
 
         const answerVal = I_line.toFixed(1);
@@ -179,7 +179,7 @@ window.ThreePhaseCircuitGenerator = {
             options: Array.from(options),
             correctAnswer: answerVal,
             image: svgDataUri,
-            explanation: `${explanation} I<sub>line</sub> = ${answerVal}A.`
+            explanation: `${explanation} $I_{\\text{line}} = ${answerVal}A$.`
         };
     },
 

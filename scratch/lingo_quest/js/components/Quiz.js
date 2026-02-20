@@ -129,6 +129,20 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     let correctCount = 0; // New tracking
     const incorrectResponses = [];
 
+    function renderMath(element) {
+        if (window.renderMathInElement) {
+            window.renderMathInElement(element, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
     function renderQuestion() {
         if (currentIndex >= questions.length) {
             feedbackOverlay.remove();
@@ -198,6 +212,10 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             };
             optionsContainer.appendChild(btn);
         });
+
+        // Trigger KaTeX rendering
+        renderMath(questionText);
+        renderMath(optionsContainer);
     }
 
     // Review Screen Logic
@@ -264,6 +282,9 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         });
         container.appendChild(list);
 
+        // Render math in review list
+        renderMath(list);
+
         const finishBtn = document.createElement('button');
         finishBtn.className = 'btn btn-primary';
         finishBtn.textContent = 'RETURN TO DASHBOARD';
@@ -321,6 +342,9 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
                     <button class="btn btn-secondary" id="next-btn" style="min-width:200px; margin-top:12px; border-color:var(--error); color:var(--error);">GOT IT</button>
                 `;
             }
+
+            // Trigger KaTeX rendering for feedback
+            renderMath(feedbackOverlay);
 
             // Adaptive Transitions
             if (Number(topicId) === 8) {

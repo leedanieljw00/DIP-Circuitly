@@ -36,7 +36,7 @@ window.DataService = {
     // Initialize: Fetch CSV
     init: async () => {
         try {
-            const response = await fetch('questions/QuestionBank.csv');
+            const response = await fetch(`questions/QuestionBank.csv?v=${Date.now()}`);
             if (!response.ok) throw new Error('Failed to load Question Bank CSV');
             const text = await response.text();
             window.DataService.questions = window.DataService.parseCSV(text);
