@@ -139,7 +139,7 @@ window.ThreePhaseCircuitGenerator = {
             if (sourceConfig === 'Wye') {
                 sourceExp = `Source is Wye: V<sub>line</sub> = √3 × V<sub>source,phase</sub> = √3 × ${V_source_phase} ≈ ${V_line.toFixed(1)}V. `;
             } else {
-                sourceExp = `Source is Delta: V<sub>line</sub> = V<sub>source,phase</sub> = ${V_line.toFixed(1)}V. `;
+                sourceExp = `Source is Delta: V<sub>line</sub> = V<sub>source,phase</sub> = ${V_line.toFixed(1)}V. (In Delta, Line Voltage equals Phase Voltage). `;
             }
         } else {
             sourceExp = `Given V<sub>line</sub> = ${V_line}V. `;
@@ -149,12 +149,12 @@ window.ThreePhaseCircuitGenerator = {
         if (loadConfig === 'Wye') {
             V_load_phase = V_line / Math.sqrt(3);
             I_line = V_load_phase / Z_mag;
-            explanation = `${sourceExp}Load is Wye: V<sub>load,phase</sub> = V<sub>line</sub> / √3 ≈ ${V_load_phase.toFixed(1)}V. |Z| = ${Z_mag.toFixed(1)}Ω. I<sub>line</sub> = I<sub>phase</sub> = V<sub>load,phase</sub> / |Z|.`;
+            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Wye connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Wye, V<sub>phase</sub> = V<sub>line</sub> / √3.<br>V<sub>load,phase</sub> = ${V_line.toFixed(1)} / √3 ≈ ${V_load_phase.toFixed(1)}V.<br><strong>Step 3:</strong> Calculate Current. |Z| = ${Z_mag.toFixed(1)}Ω.<br>I<sub>phase</sub> = V<sub>load,phase</sub> / |Z| = ${V_load_phase.toFixed(1)} / ${Z_mag.toFixed(1)} ≈ ${(V_load_phase / Z_mag).toFixed(1)}A.<br><strong>Step 4:</strong> In Wye, Line Current equals Phase Current.<br>I<sub>line</sub> = I<sub>phase</sub>.`;
         } else {
             V_load_phase = V_line;
             const I_phase = V_load_phase / Z_mag;
             I_line = I_phase * Math.sqrt(3);
-            explanation = `${sourceExp}Load is Delta: V<sub>load,phase</sub> = V<sub>line</sub> ≈ ${V_load_phase.toFixed(1)}V. |Z| = ${Z_mag.toFixed(1)}Ω. I<sub>phase</sub> = V<sub>load,phase</sub> / |Z|. I<sub>line</sub> = I<sub>phase</sub> × √3.`;
+            explanation = `${sourceExp}<br><strong>Step 1:</strong> Identify Load Configuration. Load is Delta connected.<br><strong>Step 2:</strong> Calculate Load Phase Voltage. In Delta, V<sub>phase</sub> = V<sub>line</sub>.<br>V<sub>load,phase</sub> = ${V_load_phase.toFixed(1)}V.<br><strong>Step 3:</strong> Calculate Phase Current. |Z| = ${Z_mag.toFixed(1)}Ω.<br>I<sub>phase</sub> = V<sub>load,phase</sub> / |Z| = ${V_load_phase.toFixed(1)} / ${Z_mag.toFixed(1)} ≈ ${I_phase.toFixed(1)}A.<br><strong>Step 4:</strong> Calculate Line Current. In Delta, I<sub>line</sub> = I<sub>phase</sub> × √3.<br>I<sub>line</sub> = ${I_phase.toFixed(1)} × √3.`;
         }
 
         const answerVal = I_line.toFixed(1);
