@@ -18,14 +18,14 @@ window.Login = function ({ onLogin, onRegister }) {
     // Title
     const title = document.createElement('h1');
     title.className = 'brand-title';
-    title.innerHTML = 'Circuitly';
+    title.innerHTML = 'Impulse';
     title.style.fontSize = '2.5rem';
     title.style.marginBottom = '8px';
     card.appendChild(title);
 
     const subtitle = document.createElement('p');
-    subtitle.className = 'brand-subtitle';
-    subtitle.innerHTML = 'Master the Circuit.';
+    subtitle.className = 'brand-motto';
+    subtitle.innerHTML = 'Mastery in every pulse.';
     subtitle.style.fontSize = '0.9rem';
     subtitle.style.marginBottom = '24px';
     card.appendChild(subtitle);

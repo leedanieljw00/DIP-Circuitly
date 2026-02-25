@@ -1,4 +1,4 @@
-# Circuitly
+# Impulse
 
 An interactive quiz application for Electrical Engineering students, focusing on circuit analysis, theorems, and three-phase power systems.
 

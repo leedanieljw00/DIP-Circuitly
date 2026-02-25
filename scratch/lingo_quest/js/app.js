@@ -19,6 +19,7 @@ let State = {
     nextHeartRestoreTime: null,
     activeTopicId: null,
     topicProgress: {},
+    revisionPool: [],
     isAdmin: false
 };
 
@@ -43,6 +44,7 @@ const loadUser = (profile) => {
         hearts: profile.hearts,
         nextHeartRestoreTime: profile.lastActive ? null : null, // Todo: Heart logic in ProfileService if needed
         topicProgress: profile.topicProgress || {},
+        revisionPool: profile.revisionPool || [],
         isAdmin: profile.role === 'admin'
     };
     /* 
@@ -61,7 +63,8 @@ const syncState = () => {
         window.ProfileService.updateProgress(State.studentId, {
             xp: State.xp,
             hearts: State.hearts,
-            topicProgress: State.topicProgress
+            topicProgress: State.topicProgress,
+            revisionPool: State.revisionPool
         });
     }
 };
@@ -69,13 +72,19 @@ const syncState = () => {
 function render() {
     app.innerHTML = ''; // Clear
 
-    // Header (Only show if logged in and NOT on login or profiles page)
-    if (State.view !== ROUTES.LOGIN && State.view !== ROUTES.PROFILES) {
+    // Header (Always show branding, but stats only if logged in and not on profiles page)
+    if (true) {
         const header = document.createElement('div');
         header.className = 'header-bar';
 
+        const isLoggedIn = State.view !== ROUTES.LOGIN && State.view !== ROUTES.PROFILES;
+
         if (State.isAdmin) {
             header.innerHTML = `
+                <div class="brand-logo-compact" onclick="location.reload()" style="pointer-events: auto;">
+                    <div class="logo-icon">C</div>
+                    <div class="logo-text">Circuitly</div>
+                </div>
                 <div class="stats-container">
                     <div class="stat-pill glass-pill accent-pill">ADMINISTRATOR</div>
                     <div class="stat-pill glass-pill" style="cursor:pointer; background:rgba(255, 50, 50, 0.2);" id="logout-btn">
@@ -85,6 +94,11 @@ function render() {
             `;
         } else {
             header.innerHTML = `
+                <div class="brand-logo-compact" onclick="location.reload()" style="pointer-events: auto;">
+                    <div class="logo-icon">I</div>
+                    <div class="logo-text">Impulse</div>
+                </div>
+                ${isLoggedIn ? `
                 <div class="stats-container">
                     <div class="stat-pill glass-pill" id="heart-btn" style="cursor:pointer" title="Click to refill">
                         <span style="margin-right:8px">❤️</span> ${State.hearts}
@@ -101,6 +115,7 @@ function render() {
                          🚪
                     </div>
                 </div>
+                ` : ''}
             `;
         }
 
@@ -117,6 +132,7 @@ function render() {
                     State.xp = 0;
                     State.hearts = 5;
                     State.topicProgress = {};
+                    State.revisionPool = [];
                     State.isAdmin = false;
                     State.view = ROUTES.LOGIN;
                     render();
@@ -183,12 +199,22 @@ function render() {
             if (window.Home) {
                 component = window.Home({
                     topicProgress: State.topicProgress,
+                    revisionPoolCount: State.revisionPool.length,
                     onStart: (topicId) => {
                         if (State.hearts <= 0) {
                             alert("You have no hearts left! Wait for them to restore.");
                             return;
                         }
                         State.activeTopicId = topicId;
+                        State.view = ROUTES.QUIZ;
+                        render();
+                    },
+                    onStartRevision: () => {
+                        if (State.hearts <= 0) {
+                            alert("You have no hearts left!");
+                            return;
+                        }
+                        State.activeTopicId = 'revision';
                         State.view = ROUTES.QUIZ;
                         render();
                     }
@@ -198,45 +224,69 @@ function render() {
 
         case ROUTES.QUIZ:
             if (window.Quiz) {
+                let quizQuestions = [];
+                const isRevision = State.activeTopicId === 'revision';
+
+                if (isRevision) {
+                    const pool = [...State.revisionPool];
+                    for (let i = pool.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [pool[i], pool[j]] = [pool[j], pool[i]];
+                    }
+                    quizQuestions = pool.slice(0, 15);
+                }
+
                 component = window.Quiz({
                     topicId: State.activeTopicId,
+                    customQuestions: isRevision ? quizQuestions : null,
+                    onCorrect: (questionId) => {
+                        if (isRevision) {
+                            State.revisionPool = State.revisionPool.filter(q => q.id !== questionId);
+                            syncState();
+                        }
+                    },
                     onComplete: (result) => {
-                        // Result: { score, correctCount, totalQuestions, timeSpent }
                         let earnedScore = 0;
                         let passed = false;
                         let timeSpent = result.timeSpent || 0;
 
-                        const percentage = (result.correctCount / result.totalQuestions) * 100;
-                        if (percentage >= 80) {
-                            passed = true;
-                        }
+                        if (!isRevision) {
+                            const percentage = (result.correctCount / result.totalQuestions) * 100;
+                            if (percentage >= 80) passed = true;
 
-                        // Always award XP for correct answers (1 XP per correct answer)
-                        // This ensures XP reflects number of correctly answered questions even if failed
-                        earnedScore = result.score;
+                            earnedScore = result.score;
+                            State.xp += earnedScore;
 
-                        // Update Global XP
-                        State.xp += earnedScore;
-
-                        // Update Local Topic Progress
-                        if (!State.topicProgress[State.activeTopicId]) {
-                            State.topicProgress[State.activeTopicId] = { xp: 0 };
-                        }
-                        State.topicProgress[State.activeTopicId].xp += earnedScore;
-
-                        // Update Stats via Service (XP + Time)
-                        window.ProfileService.updateStats(State.studentId, State.activeTopicId, earnedScore, timeSpent);
-
-                        if (passed) {
-                            // Logic for passing (could unlock next level or show badge, currently just flag)
-                        } else {
-                            // Failed: Deduct Heart
-                            if (State.hearts > 0) {
-                                State.hearts--;
+                            if (!State.topicProgress[State.activeTopicId]) {
+                                State.topicProgress[State.activeTopicId] = { xp: 0 };
                             }
+                            State.topicProgress[State.activeTopicId].xp += earnedScore;
+                            window.ProfileService.updateStats(State.studentId, State.activeTopicId, earnedScore, timeSpent);
+
+                            if (!passed && State.hearts > 0) State.hearts--;
+
+                            if (result.incorrectResponses) {
+                                result.incorrectResponses.forEach(inc => {
+                                    const exists = State.revisionPool.some(p => p.prompt === inc.question);
+                                    if (!exists) {
+                                        State.revisionPool.push({
+                                            id: inc.id || ('pushed_' + Date.now() + Math.random()),
+                                            topicId: State.activeTopicId,
+                                            prompt: inc.question,
+                                            options: inc.options, // These are the labels
+                                            correctAnswer: inc.correctAnswer,
+                                            image: inc.image,
+                                            explanation: inc.explanation
+                                        });
+                                    }
+                                });
+                            }
+                        } else {
+                            earnedScore = result.correctCount;
+                            State.xp += earnedScore;
                         }
 
-                        syncState(); // Save basic state
+                        syncState();
                         State.view = ROUTES.HOME;
                         render();
                     },
@@ -247,6 +297,7 @@ function render() {
                 });
             }
             break;
+
         case ROUTES.PROFILES:
             if (window.ProfileManager) {
                 component = window.ProfileManager({

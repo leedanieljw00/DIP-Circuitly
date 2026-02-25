@@ -1,11 +1,11 @@
 {
-  "name": "Circuitly",
-  "short_name": "Circuitly",
+  "name": "Impulse",
+  "short_name": "Impulse",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#58cc02",
-  "description": "Master circuit analysis with Circuitly",
+  "description": "Master circuit analysis with Impulse",
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

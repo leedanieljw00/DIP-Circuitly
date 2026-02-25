@@ -1,32 +1,33 @@
-window.Home = function ({ onStart, topicProgress }) {
-    // 1. Main Container
+window.Home = function ({ topicProgress, revisionPoolCount, onStart, onStartRevision }) {
+    const topics = window.DataService.getTopics();
     const container = document.createElement('div');
     container.className = 'dashboard-container animate-fade-in';
 
-    // 2. Header Section
+    // Header Section
     const header = document.createElement('div');
     header.className = 'dashboard-header';
     header.innerHTML = `
         <h1 class="brand-title">Circuitly</h1>
-        <p class="brand-subtitle">Master the Circuit. Rule the Grid.</p>
+        <p class="brand-motto">Master the flow of energy.</p>
     `;
     container.appendChild(header);
 
-    // 3. Import / Admin Tools (Subtle, top right or bottom? Let's keep it at bottom for now, or maybe a small icon row)
-    // For now, let's keep the main focus on content.
-
-    // 4. Topics Grid
-    const topics = window.DataService.getTopics();
-
+    // Topics Grid
     const grid = document.createElement('div');
     grid.className = 'topic-grid';
 
+    // Render regular topics
     topics.forEach(topic => {
-        // Card
         const card = document.createElement('div');
         card.className = 'card-glass';
 
-        // Header (Title)
+        // Header (ID Badge)
+        const idBadge = document.createElement('div');
+        idBadge.className = 'topic-id';
+        idBadge.textContent = topic.id;
+        card.appendChild(idBadge);
+
+        // Title
         const title = document.createElement('h3');
         title.style.fontSize = '1.25rem';
         title.style.marginBottom = '8px';
@@ -34,7 +35,7 @@ window.Home = function ({ onStart, topicProgress }) {
         title.textContent = topic.name;
         card.appendChild(title);
 
-        // Subtitle / ID
+        // Subtitle/ID text (Optional, matching previous style)
         const sub = document.createElement('div');
         sub.style.fontSize = '0.85rem';
         sub.style.color = 'var(--text-muted)';
@@ -71,20 +72,69 @@ window.Home = function ({ onStart, topicProgress }) {
         const btn = document.createElement('button');
         btn.className = 'btn-glass-action';
         btn.textContent = 'Play Now';
-        btn.onclick = () => onStart(topic.id);
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            onStart(topic.id);
+        };
         card.appendChild(btn);
 
+        card.onclick = () => onStart(topic.id);
         grid.appendChild(card);
     });
 
+    // Revision Module Card (Matching Style)
+    if (revisionPoolCount > 0) {
+        const revCard = document.createElement('div');
+        revCard.className = 'card-glass';
+        revCard.style.borderColor = 'var(--accent)';
+        revCard.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)';
+
+        // Header (ID Badge - using refresh icon)
+        const revBadge = document.createElement('div');
+        revBadge.className = 'topic-id';
+        revBadge.style.background = 'var(--accent)';
+        revBadge.innerHTML = '&#8635;';
+        revCard.appendChild(revBadge);
+
+        // Title
+        const title = document.createElement('h3');
+        title.style.fontSize = '1.25rem';
+        title.style.marginBottom = '8px';
+        title.style.fontWeight = '700';
+        title.style.color = 'var(--accent)';
+        title.textContent = "Revision Module";
+        revCard.appendChild(title);
+
+        const sub = document.createElement('div');
+        sub.style.fontSize = '0.85rem';
+        sub.style.color = 'var(--text-muted)';
+        sub.style.marginBottom = '16px';
+        sub.textContent = `${revisionPoolCount} Questions Pending`;
+        revCard.appendChild(sub);
+
+        // Action Button
+        const btn = document.createElement('button');
+        btn.className = 'btn-glass-action';
+        btn.style.background = 'linear-gradient(45deg, var(--accent), var(--primary))';
+        btn.textContent = 'Practice';
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            onStartRevision();
+        };
+        revCard.appendChild(btn);
+
+        revCard.onclick = () => onStartRevision();
+        grid.appendChild(revCard);
+    }
+
     container.appendChild(grid);
 
-    // 5. Admin / Footer Section (Restored functionality but styled)
+    // Footer Section
     const footer = document.createElement('div');
-    footer.style.marginTop = '60px';
-    footer.style.textAlign = 'center';
+    footer.className = 'dashboard-header'; // Re-using style for footer padding/center
+    footer.style.padding = '40px 0';
+    footer.style.marginTop = '40px';
     footer.style.borderTop = '1px solid var(--surface-border)';
-    footer.style.paddingTop = '20px';
 
     const importInput = document.createElement('input');
     importInput.type = 'file';
