@@ -167,7 +167,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         }
 
         const q = questions[currentIndex];
-        questionText.innerHTML = q.prompt;
+        questionText.innerHTML = `<span style="color:var(--primary); font-size:0.8em;">[Lvl ${q.difficulty || 1}]</span> ` + q.prompt;
 
         // Image
         if (q.image) {
