@@ -1,4 +1,4 @@
-# Contributing to Circuitly
+# Contributing to Impulse
 
 We welcome contributions! Whether you're adding questions or improving the code, here's how to help.
 

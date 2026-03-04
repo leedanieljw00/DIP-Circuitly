@@ -58,6 +58,7 @@ window.ProfileService = {
             xp: 0,
             hearts: 5,
             topicProgress: {},
+            revisionPool: [],
             stats: {}
         };
 
@@ -104,6 +105,7 @@ window.ProfileService = {
             profile.xp = 0;
             profile.hearts = 5;
             profile.topicProgress = {};
+            profile.revisionPool = [];
             profile.lastActive = new Date().toISOString();
             this.save();
         }
@@ -117,6 +119,7 @@ window.ProfileService = {
             if (data.xp !== undefined) profile.xp = data.xp;
             if (data.hearts !== undefined) profile.hearts = data.hearts;
             if (data.topicProgress !== undefined) profile.topicProgress = data.topicProgress;
+            if (data.revisionPool !== undefined) profile.revisionPool = data.revisionPool;
 
             profile.lastActive = new Date().toISOString();
             this.save();
