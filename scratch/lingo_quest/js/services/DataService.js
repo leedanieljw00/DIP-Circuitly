@@ -22,7 +22,8 @@ const TOPICS = [
     { id: 5, name: "Laplace Transforms" },
     { id: 6, name: "Network Functions" },
     { id: 7, name: "DC vs. AC" },
-    { id: 8, name: "Three-Phase Circuits" }
+    { id: 8, name: "Three-Phase Circuits" },
+    { id: 9, name: "Test (Beta)" }
 ];
 
 const STORAGE_KEY = 'circuitly_data';
@@ -33,8 +34,9 @@ window.DataService = {
 
     getTopics: () => TOPICS,
 
-    // Initialize: Fetch CSV
     init: async () => {
+        // Force clear cache so new difficulty data is loaded
+        localStorage.removeItem(STORAGE_KEY);
         try {
             const response = await fetch('questions/QuestionBank.csv');
             if (!response.ok) throw new Error('Failed to load Question Bank CSV');
@@ -59,7 +61,7 @@ window.DataService = {
     parseCSV: (text) => {
         const lines = text.split('\n').filter(l => l.trim());
         if (lines.length < 2) return [];
-        const headers = lines[0].split(',').map(h => h.trim());
+        const headers = lines[0].split(',').map(h => h.trim().replace(/\r/g, ''));
 
         return lines.slice(1).map(line => {
             const values = [];
@@ -73,13 +75,13 @@ window.DataService = {
                 } else if (char === '"') { // Toggle inQuote state
                     inQuote = !inQuote;
                 } else if (char === ',' && !inQuote) { // Split on comma outside quotes
-                    values.push(current.trim());
+                    values.push(current.trim().replace(/\r/g, ''));
                     current = '';
                 } else { // Add character to current value
                     current += char;
                 }
             }
-            values.push(current.trim()); // Add the last value
+            values.push(current.trim().replace(/\r/g, '')); // Add the last value
 
             const row = {};
             headers.forEach((h, i) => {
@@ -101,7 +103,8 @@ window.DataService = {
                 optionC: row.optionC,
                 answer: row.answer,
                 image: row.image || null, // Assuming 'image' column exists or defaults to null
-                explanation: row.explanation || null // Assuming 'explanation' column exists or defaults to null
+                explanation: row.explanation || null, // Assuming 'explanation' column exists or defaults to null
+                difficulty: Number(row.difficulty) || 1
             };
         });
     },
@@ -116,6 +119,48 @@ window.DataService = {
             return array;
         };
 
+        // Helper to randomize options if safe
+        const mapAndRandomize = (row) => {
+            let opts = [row.optionA, row.optionB, row.optionC];
+
+            // Inject 4th option if missing (Static questions only have 3)
+            if (opts.length < 4) {
+                opts.push("None of the above");
+            }
+
+            // Check for positional answers (e.g. "Both A and B", "All of the above")
+            // If found, preserve order.
+            const hasPositional = opts.some(opt => /Both|All|None|A and B/i.test(opt));
+
+            if (!hasPositional) {
+                opts = shuffle([...opts]);
+            }
+
+            // Map text difficulty to numbers if needed
+            let diffNum = Number(row.difficulty);
+            if (isNaN(diffNum)) {
+                if (typeof row.difficulty === 'string') {
+                    const lc = row.difficulty.toLowerCase().trim();
+                    if (lc === 'easy') diffNum = 1;
+                    else if (lc === 'medium' || lc === 'med') diffNum = 2;
+                    else if (lc === 'hard') diffNum = 3;
+                    else diffNum = 1;
+                } else {
+                    diffNum = 1;
+                }
+            }
+
+            return {
+                id: row.id,
+                prompt: row.question,
+                options: opts,
+                correctAnswer: row.answer,
+                image: row.image || null,
+                explanation: row.explanation || null,
+                difficulty: diffNum
+            };
+        };
+
         let qs = window.DataService.questions;
 
         // Filter by topic
@@ -124,33 +169,14 @@ window.DataService = {
         // Shuffle ALL available questions first
         shuffle(questions);
 
-        // Map to standard format
-        // NOTE: We map BEFORE limiting count if we want to process all, 
-        // OR we can slice first then map to save perf.
-        // Let's slice first to be efficient, but we need to map after?
-        // Wait, the map logic below uses the `row` from the filtered `qs`.
-        // Let's shuffle `questions` (which are raw rows) then slice.
-
         const MAX_QUESTIONS = 15;
 
         // If Three-Phase Topic (8), ensure 30% Theory (Static) and 70% Circuits (Generated)
         if (Number(topicId) === 8 && window.ThreePhaseCircuitGenerator) {
-            // Already handled below with specific logic, 
-            // but we need to ensure the BASE questions are mapped correctly.
-            // Let's refactor slightly to be cleaner.
 
             // 1. Get Theory Questions (Static)
-            // 'questions' is currently ALL static questions for this topic (shuffled).
-
-            // Map them to standardized format
-            let standardizedQs = questions.map(row => ({
-                id: row.id,
-                prompt: row.question,
-                options: [row.optionA, row.optionB, row.optionC],
-                correctAnswer: row.answer,
-                image: row.image || null,
-                explanation: row.explanation || null
-            }));
+            // Map them to standardized format with randomization
+            let standardizedQs = questions.map(mapAndRandomize);
 
             // Limit theory part to 30% of Target (approx 5)
             const theoryCount = Math.round(MAX_QUESTIONS * 0.3);
@@ -171,6 +197,16 @@ window.DataService = {
                 // Retry generation up to 5 times if duplicate prompt found
                 do {
                     newQ = window.ThreePhaseCircuitGenerator.generate();
+                    // Setup randomized options for generated questions if not already random
+                    // Assuming generate() returns fixed options, we should shuffle them too?
+                    // Let's assume generate() handles its own logic, but if not:
+                    if (newQ && newQ.options) {
+                        // Check positional for generated too (unlikely but safe)
+                        const hasPos = newQ.options.some(opt => /Both|All|None/i.test(opt));
+                        if (!hasPos) {
+                            newQ.options = shuffle([...newQ.options]);
+                        }
+                    }
                     attempts++;
                 } while (existingPrompts.has(newQ.prompt) && attempts < 5);
 
@@ -182,6 +218,33 @@ window.DataService = {
 
             return shuffle(standardizedQs); // Reshuffle to mix theory and generated
 
+        } else if (String(topicId).startsWith('9')) {
+            // TEST TOPIC (9 or 9_subtopic)
+            const testQs = [];
+
+            // Extract subtopic if present (e.g. "9_kirchhoff" -> "kirchhoff")
+            let subTopic = null;
+            if (String(topicId).includes('_')) {
+                subTopic = String(topicId).split('_').slice(1).join('_');
+            }
+
+            if (window.TestCircuitGenerator) {
+                for (let i = 0; i < 15; i++) {
+                    try {
+                        let newQ = window.TestCircuitGenerator.generate(subTopic);
+                        if (newQ && newQ.options && newQ.correctAnswer) {
+                            testQs.push(newQ);
+                        } else {
+                            console.warn("Generated question was malformed:", newQ);
+                        }
+                    } catch (e) {
+                        console.error("Error generating question for", subTopic, e);
+                    }
+                }
+            }
+
+            return shuffle(testQs);
+
         } else {
             // Standard Topics
             // Limit to MAX_QUESTIONS
@@ -189,15 +252,8 @@ window.DataService = {
                 questions = questions.slice(0, MAX_QUESTIONS);
             }
 
-            // Map to standard format
-            return questions.map(row => ({
-                id: row.id,
-                prompt: row.question,
-                options: [row.optionA, row.optionB, row.optionC],
-                correctAnswer: row.answer,
-                image: row.image || null,
-                explanation: row.explanation || null
-            }));
+            // Map to standard format with randomization
+            return questions.map(mapAndRandomize);
         }
     },
 
@@ -226,6 +282,53 @@ window.DataService = {
             return window.ThreePhaseCircuitGenerator.generate();
         }
         return null;
+    },
+
+    getQuestionByDifficulty: (topicId, targetDifficulty, excludeIds = []) => {
+        let qs = window.DataService.questions.filter(q =>
+            q.topicId === Number(topicId) &&
+            q.difficulty === targetDifficulty &&
+            !excludeIds.includes(q.id)
+        );
+
+        // Fallback if no questions found at this difficulty
+        if (qs.length === 0) {
+            qs = window.DataService.questions.filter(q =>
+                q.topicId === Number(topicId) &&
+                !excludeIds.includes(q.id)
+            );
+        }
+
+        if (qs.length === 0) return null;
+
+        // Helper to shuffle array (Fisher-Yates) - simplified for here
+        const shuffleOptions = (opts) => {
+            const arr = [...opts];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        };
+
+        // Pick a random one and format it
+        const row = qs[Math.floor(Math.random() * qs.length)];
+
+        let opts = [row.optionA, row.optionB, row.optionC];
+        if (opts.length < 4) opts.push("None of the above");
+
+        const hasPositional = opts.some(opt => /Both|All|None|A and B/i.test(opt));
+        if (!hasPositional) opts = shuffleOptions(opts);
+
+        return {
+            id: row.id,
+            prompt: row.question,
+            options: opts,
+            correctAnswer: row.answer,
+            image: row.image || null,
+            explanation: row.explanation || null,
+            difficulty: row.difficulty
+        };
     },
 
     importCSV: (csvText) => {
@@ -264,6 +367,21 @@ window.DataService = {
                     obj.explanation = currentline[8].trim();
                 } else {
                     obj.explanation = null;
+                }
+                // Column 10 is difficulty (index 9)
+                if (currentline[9] && currentline[9].trim() !== '') {
+                    let diffVal = currentline[9].trim();
+                    let diffNum = Number(diffVal);
+                    if (isNaN(diffNum)) {
+                        diffVal = diffVal.toLowerCase();
+                        if (diffVal === 'easy') diffNum = 1;
+                        else if (diffVal === 'medium' || diffVal === 'med') diffNum = 2;
+                        else if (diffVal === 'hard') diffNum = 3;
+                        else diffNum = 1;
+                    }
+                    obj.difficulty = diffNum;
+                } else {
+                    obj.difficulty = 1;
                 }
 
                 results.push(obj);
