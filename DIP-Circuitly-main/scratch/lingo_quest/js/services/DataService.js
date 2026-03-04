@@ -34,8 +34,9 @@ window.DataService = {
 
     getTopics: () => TOPICS,
 
-    // Initialize: Fetch CSV
     init: async () => {
+        // Force clear cache so new difficulty data is loaded
+        localStorage.removeItem(STORAGE_KEY);
         try {
             const response = await fetch('questions/QuestionBank.csv');
             if (!response.ok) throw new Error('Failed to load Question Bank CSV');
@@ -60,7 +61,7 @@ window.DataService = {
     parseCSV: (text) => {
         const lines = text.split('\n').filter(l => l.trim());
         if (lines.length < 2) return [];
-        const headers = lines[0].split(',').map(h => h.trim());
+        const headers = lines[0].split(',').map(h => h.trim().replace(/\r/g, ''));
 
         return lines.slice(1).map(line => {
             const values = [];
@@ -74,13 +75,13 @@ window.DataService = {
                 } else if (char === '"') { // Toggle inQuote state
                     inQuote = !inQuote;
                 } else if (char === ',' && !inQuote) { // Split on comma outside quotes
-                    values.push(current.trim());
+                    values.push(current.trim().replace(/\r/g, ''));
                     current = '';
                 } else { // Add character to current value
                     current += char;
                 }
             }
-            values.push(current.trim()); // Add the last value
+            values.push(current.trim().replace(/\r/g, '')); // Add the last value
 
             const row = {};
             headers.forEach((h, i) => {
