@@ -102,7 +102,8 @@ window.DataService = {
                 optionC: row.optionC,
                 answer: row.answer,
                 image: row.image || null, // Assuming 'image' column exists or defaults to null
-                explanation: row.explanation || null // Assuming 'explanation' column exists or defaults to null
+                explanation: row.explanation || null, // Assuming 'explanation' column exists or defaults to null
+                difficulty: Number(row.difficulty) || 1
             };
         });
     },
@@ -267,6 +268,53 @@ window.DataService = {
         return null;
     },
 
+    getQuestionByDifficulty: (topicId, targetDifficulty, excludeIds = []) => {
+        let qs = window.DataService.questions.filter(q => 
+            q.topicId === Number(topicId) && 
+            q.difficulty === targetDifficulty &&
+            !excludeIds.includes(q.id)
+        );
+        
+        // Fallback if no questions found at this difficulty
+        if (qs.length === 0) {
+            qs = window.DataService.questions.filter(q => 
+                q.topicId === Number(topicId) && 
+                !excludeIds.includes(q.id)
+            );
+        }
+        
+        if (qs.length === 0) return null;
+        
+        // Helper to shuffle array (Fisher-Yates) - simplified for here
+        const shuffleOptions = (opts) => {
+            const arr = [...opts];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        };
+        
+        // Pick a random one and format it
+        const row = qs[Math.floor(Math.random() * qs.length)];
+        
+        let opts = [row.optionA, row.optionB, row.optionC];
+        if (opts.length < 4) opts.push("None of the above");
+        
+        const hasPositional = opts.some(opt => /Both|All|None|A and B/i.test(opt));
+        if (!hasPositional) opts = shuffleOptions(opts);
+        
+        return {
+            id: row.id,
+            prompt: row.question,
+            options: opts,
+            correctAnswer: row.answer,
+            image: row.image || null,
+            explanation: row.explanation || null,
+            difficulty: row.difficulty
+        };
+    },
+
     importCSV: (csvText) => {
         try {
             const lines = csvText.split('\n');
@@ -303,6 +351,12 @@ window.DataService = {
                     obj.explanation = currentline[8].trim();
                 } else {
                     obj.explanation = null;
+                }
+                // Column 10 is difficulty (index 9)
+                if (currentline[9] && currentline[9].trim() !== '') {
+                    obj.difficulty = Number(currentline[9].trim());
+                } else {
+                    obj.difficulty = 1;
                 }
 
                 results.push(obj);

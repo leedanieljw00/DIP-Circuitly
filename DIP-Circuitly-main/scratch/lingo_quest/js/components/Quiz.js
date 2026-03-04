@@ -12,6 +12,12 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         recoveryCount: 0
     };
 
+    // Dynamic Difficulty State
+    let successStreak = 0;
+    let failStreak = 0;
+    let currentDifficulty = 1; // Start on easy (1)
+    const seenQuestionIds = []; // Prevent repeating questions
+
     const container = document.createElement('div');
     container.className = 'dashboard-container animate-slide-in';
     container.style.maxWidth = '800px'; // Limit width for centering
@@ -46,8 +52,17 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     progressText.className = 'text-gradient';
     progressText.style.fontWeight = '700';
     progressText.style.textAlign = 'center';
-    progressText.style.marginBottom = '10px';
+    progressText.style.marginBottom = '5px';
     progressText.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+
+    // Difficulty Text
+    const difficultyText = document.createElement('div');
+    difficultyText.style.textAlign = 'center';
+    difficultyText.style.fontSize = '0.85rem';
+    difficultyText.style.color = 'var(--text-muted)';
+    difficultyText.style.marginBottom = '15px';
+    difficultyText.style.textTransform = 'uppercase';
+    difficultyText.style.letterSpacing = '1px';
 
     container.appendChild(headerRow);
 
@@ -75,6 +90,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     rail.appendChild(fill);
     quizCard.appendChild(rail);
     quizCard.appendChild(progressText); // Moved here
+    quizCard.appendChild(difficultyText);
 
     // Question Text
     const questionText = document.createElement('h2');
@@ -163,6 +179,17 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         fill.style.width = `${p}%`;
         progressText.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
 
+        // Difficulty update
+        let diffLabel = "EASY";
+        let diffColor = "var(--text-main)";
+        if (q.difficulty == 2) {
+            diffLabel = "MEDIUM";
+        } else if (q.difficulty >= 3) {
+            diffLabel = "HARD";
+            diffColor = "var(--error)";
+        }
+        difficultyText.innerHTML = `<span style="opacity: 0.7;">Level ${q.difficulty}:</span> <strong style="color: ${diffColor};">${diffLabel}</strong>`;
+
         // Options
         optionsContainer.innerHTML = '';
         selectedOption = null;
@@ -210,6 +237,11 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             };
             optionsContainer.appendChild(btn);
         });
+
+        // Track that we've seen this question
+        if (q.id) {
+            seenQuestionIds.push(q.id);
+        }
     }
 
     // Review Screen Logic
@@ -309,6 +341,22 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
                     adaptiveStats.recoveryCount++;
                 }
 
+                // Dynamic Difficulty Logic (Streak)
+                successStreak++;
+                failStreak = 0;
+                if (successStreak >= 3 && currentDifficulty < 3) {
+                    currentDifficulty++;
+                    // You leveled up! Swap the NEXT question in the array for a harder one
+                    if (currentIndex + 1 < questions.length) {
+                        const harderQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
+                        if (harderQ) {
+                            questions[currentIndex + 1] = harderQ;
+                            console.log(`Level Up to Difficulty ${currentDifficulty}! Next question swapped.`);
+                        }
+                    }
+                    successStreak = 0; // Reset streak after level up
+                }
+
                 feedbackOverlay.style.borderTopColor = 'var(--accent)';
                 feedbackOverlay.innerHTML = `
                     <h2 style="color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin:0;">Correct!</h2>
@@ -316,6 +364,22 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
                 `;
             } else {
                 if (Number(topicId) === 8) adaptiveStats.wrongCount++;
+
+                // Dynamic Difficulty Logic (Strike)
+                failStreak++;
+                successStreak = 0;
+                if (failStreak >= 2 && currentDifficulty > 1) {
+                    currentDifficulty--;
+                    // You leveled down! Swap the NEXT question in the array for an easier one
+                    if (currentIndex + 1 < questions.length) {
+                        const easierQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
+                        if (easierQ) {
+                            questions[currentIndex + 1] = easierQ;
+                            console.log(`Level Down to Difficulty ${currentDifficulty}. Next question swapped.`);
+                        }
+                    }
+                    failStreak = 0; // Reset strike after level down
+                }
 
                 incorrectResponses.push({
                     question: q.prompt,
