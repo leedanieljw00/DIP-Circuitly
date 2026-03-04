@@ -167,7 +167,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         }
 
         const q = questions[currentIndex];
-        questionText.innerHTML = `<span style="color:var(--primary); font-size:0.8em;">[Lvl ${q.difficulty || 1}]</span> ` + q.prompt;
+        questionText.innerHTML = q.prompt;
 
         // Image
         if (q.image) {
@@ -353,12 +353,13 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
                 failStreak = 0;
                 if (successStreak >= 3 && currentDifficulty < 3) {
                     currentDifficulty++;
-                    // You leveled up! Swap the NEXT question in the array for a harder one
-                    if (currentIndex + 1 < questions.length) {
+                    // You leveled up! Swap ALL remaining questions for harder ones
+                    console.log(`Level Up to Difficulty ${currentDifficulty}! Swapping remaining questions.`);
+                    for (let i = currentIndex + 1; i < questions.length; i++) {
                         const harderQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
                         if (harderQ) {
-                            questions[currentIndex + 1] = harderQ;
-                            console.log(`Level Up to Difficulty ${currentDifficulty}! Next question swapped.`);
+                            questions[i] = harderQ;
+                            seenQuestionIds.push(harderQ.id); // Prevent picking the same one in this loop
                         }
                     }
                     successStreak = 0; // Reset streak after level up
@@ -377,12 +378,13 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
                 successStreak = 0;
                 if (failStreak >= 2 && currentDifficulty > 1) {
                     currentDifficulty--;
-                    // You leveled down! Swap the NEXT question in the array for an easier one
-                    if (currentIndex + 1 < questions.length) {
+                    // You leveled down! Swap ALL remaining questions for easier ones
+                    console.log(`Level Down to Difficulty ${currentDifficulty}. Swapping remaining questions.`);
+                    for (let i = currentIndex + 1; i < questions.length; i++) {
                         const easierQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
                         if (easierQ) {
-                            questions[currentIndex + 1] = easierQ;
-                            console.log(`Level Down to Difficulty ${currentDifficulty}. Next question swapped.`);
+                            questions[i] = easierQ;
+                            seenQuestionIds.push(easierQ.id); // Prevent picking the same one in this loop
                         }
                     }
                     failStreak = 0; // Reset strike after level down

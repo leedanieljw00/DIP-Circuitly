@@ -93,6 +93,20 @@ window.DataService = {
                 row[h] = val;
             });
 
+            // Map text difficulty to numbers if needed
+            let diffNum = Number(row.difficulty);
+            if (isNaN(diffNum)) {
+                if (typeof row.difficulty === 'string') {
+                    const lc = row.difficulty.toLowerCase().trim();
+                    if (lc === 'easy') diffNum = 1;
+                    else if (lc === 'medium' || lc === 'med') diffNum = 2;
+                    else if (lc === 'hard') diffNum = 3;
+                    else diffNum = 1;
+                } else {
+                    diffNum = 1;
+                }
+            }
+
             // Map types and structure
             return {
                 id: Number(row.id),
@@ -102,9 +116,9 @@ window.DataService = {
                 optionB: row.optionB,
                 optionC: row.optionC,
                 answer: row.answer,
-                image: row.image || null, // Assuming 'image' column exists or defaults to null
-                explanation: row.explanation || null, // Assuming 'explanation' column exists or defaults to null
-                difficulty: Number(row.difficulty) || 1
+                image: row.image || null,
+                explanation: row.explanation || null,
+                difficulty: diffNum
             };
         });
     },
