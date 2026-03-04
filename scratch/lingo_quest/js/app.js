@@ -1,7 +1,7 @@
 // Main App Entry
 const app = document.getElementById('app');
 
-const ROUTES = {
+const ROUTES = { // constant object used as maps like buttons on an elevator
     LOGIN: 'login',
     HOME: 'home',
     QUIZ: 'quiz',
@@ -12,7 +12,7 @@ const ROUTES = {
 
 // Global State
 let State = {
-    view: ROUTES.LOGIN,
+    view: ROUTES.LOGIN,// Update state.view when changing pages
     username: null,
     xp: 0,
     hearts: 5,
@@ -66,7 +66,7 @@ const syncState = () => {
     }
 };
 
-function render() {
+function render() { // Inside render, code looks at state.view and matches it against ROUTES
     app.innerHTML = ''; // Clear
 
     // Header (Only show if logged in and NOT on login or profiles page)
