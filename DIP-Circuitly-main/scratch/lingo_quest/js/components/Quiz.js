@@ -184,11 +184,12 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         let diffColor = "var(--text-main)";
         if (q.difficulty == 2) {
             diffLabel = "MEDIUM";
+            diffColor = "var(--warning)"; // Optional: Add a medium color
         } else if (q.difficulty >= 3) {
             diffLabel = "HARD";
             diffColor = "var(--error)";
         }
-        difficultyText.innerHTML = `<span style="opacity: 0.7;">Level ${q.difficulty}:</span> <strong style="color: ${diffColor};">${diffLabel}</strong>`;
+        difficultyText.innerHTML = `<span style="opacity: 0.7;">Level ${q.difficulty || 1}:</span> <strong style="color: ${diffColor};">${diffLabel}</strong>`;
 
         // Options
         optionsContainer.innerHTML = '';
