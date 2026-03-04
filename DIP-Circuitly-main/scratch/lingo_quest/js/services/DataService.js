@@ -141,7 +141,8 @@ window.DataService = {
                 options: opts,
                 correctAnswer: row.answer,
                 image: row.image || null,
-                explanation: row.explanation || null
+                explanation: row.explanation || null,
+                difficulty: row.difficulty || 1
             };
         };
 
@@ -269,22 +270,22 @@ window.DataService = {
     },
 
     getQuestionByDifficulty: (topicId, targetDifficulty, excludeIds = []) => {
-        let qs = window.DataService.questions.filter(q => 
-            q.topicId === Number(topicId) && 
+        let qs = window.DataService.questions.filter(q =>
+            q.topicId === Number(topicId) &&
             q.difficulty === targetDifficulty &&
             !excludeIds.includes(q.id)
         );
-        
+
         // Fallback if no questions found at this difficulty
         if (qs.length === 0) {
-            qs = window.DataService.questions.filter(q => 
-                q.topicId === Number(topicId) && 
+            qs = window.DataService.questions.filter(q =>
+                q.topicId === Number(topicId) &&
                 !excludeIds.includes(q.id)
             );
         }
-        
+
         if (qs.length === 0) return null;
-        
+
         // Helper to shuffle array (Fisher-Yates) - simplified for here
         const shuffleOptions = (opts) => {
             const arr = [...opts];
@@ -294,16 +295,16 @@ window.DataService = {
             }
             return arr;
         };
-        
+
         // Pick a random one and format it
         const row = qs[Math.floor(Math.random() * qs.length)];
-        
+
         let opts = [row.optionA, row.optionB, row.optionC];
         if (opts.length < 4) opts.push("None of the above");
-        
+
         const hasPositional = opts.some(opt => /Both|All|None|A and B/i.test(opt));
         if (!hasPositional) opts = shuffleOptions(opts);
-        
+
         return {
             id: row.id,
             prompt: row.question,
