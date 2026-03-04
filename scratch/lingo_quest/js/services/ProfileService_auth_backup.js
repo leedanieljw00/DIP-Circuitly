@@ -36,19 +36,15 @@ window.ProfileService = {
     },
 
     addProfile: function (profile) {
-        // Validation
-        if (!profile.name || !profile.studentId || !profile.username || !profile.password) {
-            return { success: false, error: "All fields are required (Name, ID, Username, Password)." };
+        // Simple validation
+        if (!profile.name || !profile.studentId) {
+            return { success: false, error: "Name and Student ID are required." };
         }
 
         // Check for duplicate ID
-        if (this.profiles.some(p => p.studentId === profile.studentId)) {
+        const exists = this.profiles.some(p => p.studentId === profile.studentId);
+        if (exists) {
             return { success: false, error: "Student ID already exists." };
-        }
-
-        // Check for duplicate Username
-        if (this.profiles.some(p => p.username === profile.username)) {
-            return { success: false, error: "Username already taken." };
         }
 
         const newProfile = {
@@ -57,36 +53,12 @@ window.ProfileService = {
             // Default App State
             xp: 0,
             hearts: 5,
-            topicProgress: {},
-            stats: {}
+            topicProgress: {}
         };
 
         this.profiles.push(newProfile);
         this.save();
         return { success: true };
-    },
-
-    authenticate: function (username, password) {
-        // Admin Backdoor
-        if (username === 'admin' && password === 'admin') {
-            return {
-                success: true,
-                profile: {
-                    name: 'Administrator',
-                    studentId: 'ADMIN',
-                    role: 'admin',
-                    xp: 0,
-                    hearts: 999
-                }
-            };
-        }
-
-        const profile = this.profiles.find(p => p.username === username && p.password === password);
-        if (profile) {
-            this.setActiveProfile(profile.studentId);
-            return { success: true, profile };
-        }
-        return { success: false, error: "Invalid username or password." };
     },
 
     deleteProfile: function (studentId) {

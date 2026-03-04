@@ -6,12 +6,13 @@ window.Login = function ({ onLogin, onRegister }) {
     container.style.flexDirection = 'column';
     container.style.alignItems = 'center';
     container.style.justifyContent = 'center';
+    container.style.padding = '20px';
 
     const card = document.createElement('div');
     card.className = 'card-glass';
     card.style.maxWidth = '400px';
     card.style.width = '100%';
-    card.style.padding = '40px';
+    card.style.padding = '32px';
     card.style.textAlign = 'center';
 
     // Title
@@ -26,59 +27,49 @@ window.Login = function ({ onLogin, onRegister }) {
     subtitle.className = 'brand-subtitle';
     subtitle.innerHTML = 'Master the Circuit.';
     subtitle.style.fontSize = '0.9rem';
-    subtitle.style.marginBottom = '32px';
+    subtitle.style.marginBottom = '24px';
     card.appendChild(subtitle);
+
+    // Toggle Buttons
+    const toggleContainer = document.createElement('div');
+    toggleContainer.style.display = 'flex';
+    toggleContainer.style.justifyContent = 'center';
+    toggleContainer.style.marginBottom = '24px';
+    toggleContainer.style.background = 'rgba(255,255,255,0.05)';
+    toggleContainer.style.borderRadius = '8px';
+    toggleContainer.style.padding = '4px';
+
+    const loginToggle = document.createElement('button');
+    loginToggle.textContent = 'Log In';
+    loginToggle.style.flex = '1';
+    loginToggle.style.padding = '8px';
+    loginToggle.style.border = 'none';
+    loginToggle.style.borderRadius = '6px';
+    loginToggle.style.cursor = 'pointer';
+    loginToggle.style.color = 'white';
+
+    const signupToggle = document.createElement('button');
+    signupToggle.textContent = 'Sign Up';
+    signupToggle.style.flex = '1';
+    signupToggle.style.padding = '8px';
+    signupToggle.style.border = 'none';
+    signupToggle.style.borderRadius = '6px';
+    signupToggle.style.cursor = 'pointer';
+    signupToggle.style.color = 'white';
+
+    toggleContainer.appendChild(loginToggle);
+    toggleContainer.appendChild(signupToggle);
+    card.appendChild(toggleContainer);
 
     // Form Container
     const formContainer = document.createElement('div');
-    formContainer.style.display = 'flex';
-    formContainer.style.flexDirection = 'column';
-    formContainer.style.gap = '16px';
+    card.appendChild(formContainer);
 
-    // Existing Users List (Dropdown or Buttons)
-    const userSelectLabel = document.createElement('div');
-    userSelectLabel.textContent = 'Continue as...';
-    userSelectLabel.style.color = 'var(--text-muted)';
-    userSelectLabel.style.marginBottom = '8px';
-    userSelectLabel.style.fontSize = '0.9rem';
-    userSelectLabel.style.textAlign = 'left';
-
-    // Async Fetch Users
-    (async () => {
-        const users = await window.AuthService.getUsers();
-        const userList = Object.keys(users);
-
-        if (userList.length > 0) {
-            formContainer.appendChild(userSelectLabel);
-
-            userList.forEach(username => {
-                const btn = document.createElement('button');
-                btn.className = 'btn btn-secondary';
-                btn.style.width = '100%';
-                btn.style.justifyContent = 'space-between';
-                btn.innerHTML = `<span>${username}</span> <span style="font-size:0.8rem; color:var(--text-muted)">Lvl ${Math.floor(users[username].xp / 100) + 1}</span>`;
-                btn.onclick = () => onLogin(username);
-                formContainer.appendChild(btn);
-            });
-
-            const divider = document.createElement('div');
-            divider.style.margin = '20px 0';
-            divider.style.borderTop = '1px solid var(--surface-border)';
-            formContainer.appendChild(divider);
-        }
-
-        // New User Input
-        const newLabel = document.createElement('div');
-        newLabel.textContent = 'Or create new profile:';
-        newLabel.style.color = 'var(--text-muted)';
-        newLabel.style.marginBottom = '8px';
-        newLabel.style.fontSize = '0.9rem';
-        newLabel.style.textAlign = 'left';
-        formContainer.appendChild(newLabel);
-
+    // Helper: Create Input
+    const createInput = (placeholder, type = 'text') => {
         const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Enter Name';
+        input.type = type;
+        input.placeholder = placeholder;
         input.style.width = '100%';
         input.style.padding = '12px';
         input.style.background = 'rgba(0,0,0,0.2)';
@@ -88,29 +79,84 @@ window.Login = function ({ onLogin, onRegister }) {
         input.style.fontSize = '1rem';
         input.style.outline = 'none';
         input.style.marginBottom = '12px';
+        return input;
+    };
 
-        input.onkeypress = (e) => {
-            if (e.key === 'Enter') createBtn.click();
+    // --- RENDER LOGIN ---
+    function renderLogin() {
+        formContainer.innerHTML = '';
+        loginToggle.style.background = 'var(--primary)';
+        loginToggle.style.fontWeight = 'bold';
+        signupToggle.style.background = 'transparent';
+        signupToggle.style.fontWeight = 'normal';
+
+        const userIn = createInput('Username');
+        const passIn = createInput('Password', 'password');
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.style.width = '100%';
+        btn.textContent = 'LOG IN';
+
+        btn.onclick = () => {
+            if (onLogin) onLogin(userIn.value, passIn.value);
         };
 
-        const createBtn = document.createElement('button');
-        createBtn.className = 'btn btn-primary';
-        createBtn.style.width = '100%';
-        createBtn.textContent = 'CREATE PROFILE';
-        createBtn.onclick = () => {
-            const name = input.value.trim();
-            if (name) {
-                onRegister(name);
+        // Enter key support
+        passIn.onkeypress = (e) => { if (e.key === 'Enter') btn.click(); };
+
+        formContainer.appendChild(userIn);
+        formContainer.appendChild(passIn);
+        formContainer.appendChild(btn);
+    }
+
+    // --- RENDER SIGNUP ---
+    function renderSignup() {
+        formContainer.innerHTML = '';
+        signupToggle.style.background = 'var(--primary)';
+        signupToggle.style.fontWeight = 'bold';
+        loginToggle.style.background = 'transparent';
+        loginToggle.style.fontWeight = 'normal';
+
+        const nameIn = createInput('Full Name'); // Name
+        const idIn = createInput('Matrix Number'); // Matrix No
+        const groupIn = createInput('Tutorial Group'); // Group
+        const userIn = createInput('Username'); // Username
+        const passIn = createInput('Password', 'password'); // Password
+
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-accent';
+        btn.style.width = '100%';
+        btn.style.background = 'var(--secondary)';
+        btn.style.color = 'white';
+        btn.textContent = 'SIGN UP';
+
+        btn.onclick = () => {
+            if (onRegister) {
+                onRegister({
+                    name: nameIn.value,
+                    studentId: idIn.value,
+                    classGroup: groupIn.value,
+                    username: userIn.value,
+                    password: passIn.value
+                });
             }
         };
 
-        formContainer.appendChild(input);
-        formContainer.appendChild(createBtn);
+        formContainer.appendChild(nameIn);
+        formContainer.appendChild(idIn);
+        formContainer.appendChild(groupIn);
+        formContainer.appendChild(userIn);
+        formContainer.appendChild(passIn);
+        formContainer.appendChild(btn);
+    }
 
-    })();
+    // Bind Toggles
+    loginToggle.onclick = renderLogin;
+    signupToggle.onclick = renderSignup;
 
-    card.appendChild(formContainer);
+    // Default View
+    renderLogin();
+
     container.appendChild(card);
-
     return container;
 };
