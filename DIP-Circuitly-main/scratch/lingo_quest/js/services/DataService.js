@@ -136,6 +136,20 @@ window.DataService = {
                 opts = shuffle([...opts]);
             }
 
+            // Map text difficulty to numbers if needed
+            let diffNum = Number(row.difficulty);
+            if (isNaN(diffNum)) {
+                if (typeof row.difficulty === 'string') {
+                    const lc = row.difficulty.toLowerCase().trim();
+                    if (lc === 'easy') diffNum = 1;
+                    else if (lc === 'medium' || lc === 'med') diffNum = 2;
+                    else if (lc === 'hard') diffNum = 3;
+                    else diffNum = 1;
+                } else {
+                    diffNum = 1;
+                }
+            }
+
             return {
                 id: row.id,
                 prompt: row.question,
@@ -143,7 +157,7 @@ window.DataService = {
                 correctAnswer: row.answer,
                 image: row.image || null,
                 explanation: row.explanation || null,
-                difficulty: row.difficulty || 1
+                difficulty: diffNum
             };
         };
 
@@ -356,7 +370,16 @@ window.DataService = {
                 }
                 // Column 10 is difficulty (index 9)
                 if (currentline[9] && currentline[9].trim() !== '') {
-                    obj.difficulty = Number(currentline[9].trim());
+                    let diffVal = currentline[9].trim();
+                    let diffNum = Number(diffVal);
+                    if (isNaN(diffNum)) {
+                        diffVal = diffVal.toLowerCase();
+                        if (diffVal === 'easy') diffNum = 1;
+                        else if (diffVal === 'medium' || diffVal === 'med') diffNum = 2;
+                        else if (diffVal === 'hard') diffNum = 3;
+                        else diffNum = 1;
+                    }
+                    obj.difficulty = diffNum;
                 } else {
                     obj.difficulty = 1;
                 }
