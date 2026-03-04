@@ -90,7 +90,6 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     rail.appendChild(fill);
     quizCard.appendChild(rail);
     quizCard.appendChild(progressText); // Moved here
-    quizCard.appendChild(difficultyText);
 
     // Question Text
     const questionText = document.createElement('h2');
@@ -99,6 +98,13 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     questionText.style.marginBottom = '5px';
     questionText.style.lineHeight = '1.3';
     quizCard.appendChild(questionText);
+
+    // Explicitly add a fallback text and a solid background to difficultyText to guarantee visibility
+    difficultyText.innerHTML = "<strong>Loading Difficulty...</strong>";
+    difficultyText.style.background = "rgba(255, 255, 255, 0.1)";
+    difficultyText.style.padding = "5px";
+    difficultyText.style.borderRadius = "5px";
+    quizCard.appendChild(difficultyText);
 
     // Image Area
     const questionImage = document.createElement('img');
