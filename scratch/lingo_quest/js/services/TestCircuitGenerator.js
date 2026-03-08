@@ -1080,12 +1080,11 @@ window.TestCircuitGenerator = {
         if (type === 'RC') {
             // Capacitor
             compSVG = `
-                <line x1="260" y1="100" x2="270" y2="100" class="wire" />
+                <line x1="260" y1="90" x2="260" y2="110" class="wire" />
                 <line x1="270" y1="90" x2="270" y2="110" class="wire" />
-                <line x1="280" y1="90" x2="280" y2="110" class="wire" />
-                <line x1="280" y1="100" x2="290" y2="100" class="wire" />
+                <line x1="270" y1="100" x2="280" y2="100" class="wire" />
             `;
-            compLabel = `C=${CL}mF`;
+            compLabel = `C=${CL}F`;
         } else {
             // Inductor
             compSVG = `<g transform="translate(260, 100)"><path d="${lPath}" class="wire" fill="none"/></g>`;
@@ -1093,16 +1092,25 @@ window.TestCircuitGenerator = {
         }
 
         let els = `
-            <g transform="scale(1.5)">
+            <g transform="translate(60, 20) scale(1.3)">
+            <!-- Source (V0) -->
+            <circle cx="50" cy="150" r="15" fill="white" stroke="black" stroke-width="2" />
+            <text x="35" y="155" class="comp-text">V0</text>
+            <line x1="50" y1="135" x2="50" y2="100" class="wire" />
+            <line x1="50" y1="165" x2="50" y2="200" class="wire" />
+
             <!-- Switch -->
             <circle cx="50" cy="100" r="3" fill="black" />
-            <line x1="50" y1="100" x2="90" y2="80" class="wire" /> <!-- Open switch -->
+            <circle cx="90" cy="100" r="3" fill="black" />
+            <line x1="50" y1="100" x2="85" y2="80" class="wire" /> <!-- Switch blade (opening) -->
+            <path d="M 60 90 A 20 20 0 0 1 75 95" fill="none" stroke="black" stroke-dasharray="2,2" />
             <text x="60" y="70" class="comp-text">t=0</text>
-            <line x1="100" y1="100" x2="130" y2="100" class="wire" />
+            
+            <line x1="90" y1="100" x2="130" y2="100" class="wire" />
 
             <!-- Resistor -->
             <g transform="translate(130, 100)"><path d="M 0 0 ${rPathH}" class="wire" /></g>
-            <text x="145" y="80" class="comp-text">R=${R}</text>
+            <text x="145" y="80" class="comp-text">R=${R}Ω</text>
             <line x1="162.5" y1="100" x2="260" y2="100" class="wire" />
 
             <!-- Comp (C or L) -->
@@ -1110,9 +1118,9 @@ window.TestCircuitGenerator = {
             <text x="265" y="80" class="comp-text">${compLabel}</text>
             
             <!-- Return path -->
+            <line x1="${type === 'RC' ? 280 : 300}" y1="100" x2="320" y2="100" class="wire" />
             <line x1="320" y1="100" x2="320" y2="200" class="wire" />
             <line x1="320" y1="200" x2="50" y2="200" class="wire" />
-            <line x1="50" y1="200" x2="50" y2="150" class="wire" /> <!-- To source if needed, or just loop -->
             </g>
          `;
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="100%" height="100%" fill="white" />${style}${els}</svg>`;
@@ -1232,27 +1240,43 @@ window.TestCircuitGenerator = {
 
         const w = 600, h = 300;
         const style = `<style>.wire { fill:none; stroke:black; stroke-width:2; } .text { font-family:sans-serif; font-size:14px; font-weight:bold; }</style>`;
+        const rPathH = "l 5 -5 l 5 10 l 5 -10 l 5 10 l 5 -10 l 5 10 l 2.5 -5";
+        const lPath = "m 0 0 q 5 -10 10 0 q 5 -10 10 0 q 5 -10 10 0 q 5 -10 10 0";
 
         let els = `
-            <g transform="scale(1.5)">
-            <text x="130" y="50" class="text" text-anchor="middle">Series RLC</text>
+            <g transform="translate(60, 20) scale(1.3)">
+            <text x="160" y="50" class="text" text-anchor="middle">Series RLC Circuit</text>
             
-            <rect x="100" y="100" width="40" height="20" fill="white" stroke="black" />
-            <text x="120" y="95" class="text" text-anchor="middle">${R_lbl}</text>
+            <!-- Voltage Source -->
+            <circle cx="50" cy="150" r="15" fill="white" stroke="black" stroke-width="2" />
+            <text x="35" y="155" class="text">Vs</text>
+            <line x1="50" y1="135" x2="50" y2="100" class="wire" />
+            <line x1="50" y1="165" x2="50" y2="200" class="wire" />
             
-            <circle cx="180" cy="110" r="10" fill="none" stroke="black" />
-            <path d="M 170 110 q 5 -10 10 0 q 5 -10 10 0" fill="none" stroke="black" />
-            <text x="180" y="90" class="text" text-anchor="middle">${L_lbl}</text>
+            <!-- Top Wire to R -->
+            <line x1="50" y1="100" x2="80" y2="100" class="wire" />
             
-            <line x1="220" y1="110" x2="220" y2="100" class="wire" />
-            <line x1="210" y1="100" x2="230" y2="100" class="wire" />
-            <line x1="210" y1="120" x2="230" y2="120" class="wire" />
-            <line x1="220" y1="120" x2="220" y2="110" class="wire" />
-            <text x="220" y="90" class="text" text-anchor="middle">${C_lbl}</text>
+            <!-- Resistor -->
+            <g transform="translate(80, 100)"><path d="M 0 0 ${rPathH}" class="wire" /></g>
+            <text x="95" y="80" class="text">${R_lbl}</text>
             
-            <line x1="50" y1="110" x2="100" y2="110" class="wire" />
-            <line x1="140" y1="110" x2="170" y2="110" class="wire" />
-            <line x1="190" y1="110" x2="210" y2="110" class="wire" />
+            <line x1="112.5" y1="100" x2="150" y2="100" class="wire" />
+            
+            <!-- Inductor -->
+            <g transform="translate(150, 100)"><path d="${lPath}" class="wire" /></g>
+            <text x="165" y="80" class="text">${L_lbl}</text>
+            
+            <line x1="190" y1="100" x2="230" y2="100" class="wire" />
+            
+            <!-- Capacitor (Vertical Plates) -->
+            <line x1="230" y1="90" x2="230" y2="110" class="wire" />
+            <line x1="240" y1="90" x2="240" y2="110" class="wire" />
+            <text x="235" y="80" class="text" text-anchor="middle">${C_lbl}</text>
+            
+            <!-- Loop back -->
+            <line x1="240" y1="100" x2="280" y2="100" class="wire" />
+            <line x1="280" y1="100" x2="280" y2="200" class="wire" />
+            <line x1="280" y1="200" x2="50" y2="200" class="wire" />
             </g>
         `;
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="100%" height="100%" fill="white" />${style}${els}</svg>`;
