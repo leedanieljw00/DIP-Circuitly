@@ -1,0 +1,21 @@
+{
+  "name": "dip-circuitly-main",
+  "version": "1.0.0",
+  "description": "Impulse is a gamified, web-based educational tool designed to help Electrical & Electronic Engineering students master the complexities of circuit analysis. By moving away from static textbooks, Impulse provides a dynamic environment where students can test their knowledge of nodal analysis, mesh analysis, and complex circuit theorems in real-time.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
+  }
+}

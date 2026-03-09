@@ -1,0 +1,30 @@
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# Temporary and Debug Scripts created during development
+tmp_*.js
+debug_*.js
+check_*.js
+find_*.js
+dump_*.js
+inspect_*.js
+sample_*.js
+search_*.js
+peek_*.js
+test_*.js
+list_*.js
+migrate_schema.js
+
+# Data Dumps and Logs
+*.txt
+*.json
+!package.json
+!package-lock.json
+!manifest.json
+!tmp_topic4.json
+
+# IDE config files
+.vscode/
