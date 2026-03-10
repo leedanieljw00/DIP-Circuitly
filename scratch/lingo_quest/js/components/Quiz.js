@@ -23,8 +23,18 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
     // Helper: Format Math Text (Auto-wraps math patterns in delimiters)
     function formatMathText(text) {
         if (!text) return "";
+
+        const hasCustomDelimiters = text.includes('$') || text.includes('\\(') || text.includes('\\[') || text.includes('$$');
+
+        // Text replacements for symbols and formatting (do this before catching variables)
+        text = text.replace(/\bInf\b/g, '\\(\\infty\\)');
+        text = text.replace(/\b(?:Mega\s*Ohm|mega\s*ohm|MegaOhm|M\s*Ohm)\b/gi, '\\(\\text{M}\\Omega\\)');
+        text = text.replace(/\b(?:kilo\s*ohm|kiloohm|k\s*Ohm)\b/gi, '\\(\\text{k}\\Omega\\)');
+        text = text.replace(/\b(?:Ohm|ohm)s?\b/g, '\\(\\Omega\\)');
+        text = text.replace(/([A-Za-z0-9_]+)\s*=\s*/g, '$1 = ');
+
         // Already contains delimiters? Skip auto-wrapping but keep for typesetting
-        if (text.includes('$') || text.includes('\\(') || text.includes('\\[') || text.includes('$$')) return text;
+        if (hasCustomDelimiters) return text;
 
         // Pattern 1: Exponents like 10^-9 or 2^3 or 10^6
         const exponentPattern = /(\d+\^\{-?\d+\}|\d+\^-?\d+)/g;
@@ -34,25 +44,33 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
         const scientificPattern = /(\d+\.?\d*\s*[x*×]\s*10\^\{-?\d+\}|\d+\.?\d*\s*[x*×]\s*10\^-?\d+)/gi;
         text = text.replace(scientificPattern, '\\($1\\)');
 
-        // Pattern 3: Circuit Subscripts (Vph, V_ph, R1, etc.)
-        // Rule A: Mandatory underscore for word-based subscripts (e.g. V_ph, I_line)
+        // Pattern 3: Square Roots like sqrt(2) or sq(LC)
+        const sqrtPattern = /\bsq(?:rt)?\(([^)]+)\)/g;
+        text = text.replace(sqrtPattern, '\\(\\sqrt{$1}\\)');
+
+        // Pattern 4: Circuit Subscripts (Vph, V_ph, R1, etc.)
         const underscorePattern = /\b([VvIiRLCZP])_([a-z0-9]+)\b/g;
         text = text.replace(underscorePattern, '\\($1_{$2}\\)');
 
-        // Rule B: Digit subscripts (e.g. V1, R2, P3) - Usually safe for circuit variables
         const digitPattern = /\b([VvIiRLCZP])(\d+)\b/g;
         text = text.replace(digitPattern, '\\($1_{$2}\\)');
 
-        // Rule C: Specific Whitelist for common compound variables (Vph, Iph, Vrms, Irms)
-        // These are common enough to match without underscore, but restricted to exact matches
-        const whitelistPattern = /\b(Vph|Iph|Vrms|Irms|Vline|Iline|Vload|Iload)\b/g;
-        text = text.replace(whitelistPattern, match => `\\(${match[0]}_{${match.slice(1)}}\\)`);
+        // Whitelist for common compound variables
+        const whitelistPattern = /\b(Vph|Iph|Vrms|Irms|Vline|Iline|Vload|Iload|Vm|Im|Rth|Vth|Rn|In|Zth|Ztr)\b/g;
+        text = text.replace(whitelistPattern, match => `\\(${match[0]}_{${match.substring(1)}}\\)`);
 
-        // Pattern 4: Fractions like A/B or ratio
-        // We match sequences of letters/numbers/brackets/spaces separated by /
-        // We refine to ensure we don't accidentally capture too many spaces or punctuation
-        const fractionPattern = /((?:[\w\d()]+\s*){1,2})\/\s*((?:[\w\d()]+\s*){1,2})/g;
-        text = text.replace(fractionPattern, '\\(\\frac{$1}{$2}\\)');
+        // Pattern 5: Fractions like A/B or ratio
+        // Now handles previously wrapped expressions like \(V_{m}\)
+        const fractionPattern = /((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)\/\s*((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)/g;
+        text = text.replace(fractionPattern, (match, p1, p2) => {
+            const clean1 = p1.replace(/\\\(/g, '').replace(/\\\)/g, '');
+            const clean2 = p2.replace(/\\\(/g, '').replace(/\\\)/g, '');
+            return `\\(\\frac{${clean1.trim()}}{${clean2.trim()}}\\)`;
+        });
+
+        // Cleanup: merge adjacent math blocks separated by '*' to render as \cdot
+        // Example: \(V_{m}\) * \(\sqrt{2}\) -> \(V_{m} \cdot \sqrt{2}\)
+        text = text.replace(/\\\)\s*\*\s*\\\(/g, ' \\cdot ');
 
         return text;
     }
@@ -268,6 +286,35 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
             };
             optionsContainer.appendChild(btn);
         });
+
+        // Add "Not familiar with the concept" option
+        const notFamiliarBtn = document.createElement('button');
+        notFamiliarBtn.className = 'btn btn-secondary';
+        notFamiliarBtn.innerHTML = "Not familiar with the concept";
+        notFamiliarBtn.style.justifyContent = 'flex-start';
+        notFamiliarBtn.style.textAlign = 'left';
+        notFamiliarBtn.style.width = '100%';
+        notFamiliarBtn.style.marginTop = '8px';
+
+        notFamiliarBtn.onclick = () => {
+            if (isAnswered) return;
+
+            // Reset styling
+            Array.from(optionsContainer.children).forEach(c => {
+                c.style.borderColor = 'rgba(255,255,255,0.1)';
+                c.style.background = 'rgba(255,255,255,0.05)';
+                c.style.boxShadow = 'none';
+            });
+
+            notFamiliarBtn.style.borderColor = 'var(--warning, #f59e0b)';
+            notFamiliarBtn.style.background = 'rgba(245, 158, 11, 0.15)';
+            notFamiliarBtn.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.2)';
+
+            selectedOption = "NOT_FAMILIAR";
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+        };
+        optionsContainer.appendChild(notFamiliarBtn);
     }
 
     // Review Screen Logic
@@ -358,6 +405,7 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
 
             // Logic identical to before
             const isCorrect = (selectedOption === q.correctAnswer);
+            const isNotFamiliar = (selectedOption === "NOT_FAMILIAR");
 
             feedbackOverlay.innerHTML = '';
 
@@ -383,17 +431,48 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
                     question: q.prompt,
                     options: q.options,
                     image: q.image,
-                    userAnswer: selectedOption,
+                    userAnswer: isNotFamiliar ? "Not familiar with the concept" : selectedOption,
                     correctAnswer: q.correctAnswer,
                     explanation: q.explanation
                 });
 
-                feedbackOverlay.style.borderTopColor = 'var(--error)';
+                // If not familiar, add to unfamiliarPool
+                // Note: generated questions (Module 8 circuit problems) have no CSV id,
+                // so skip them — they can't be linked back to a PDF reference.
+                if (isNotFamiliar && q.id != null) {
+                    const profileService = window.ProfileService;
+                    const activeProfile = profileService.getActiveProfile();
+                    if (activeProfile) {
+                        if (!activeProfile.unfamiliarPool) activeProfile.unfamiliarPool = [];
+                        if (!activeProfile.unfamiliarPool.some(p => p.id === q.id)) {
+                            activeProfile.unfamiliarPool.push({
+                                id: q.id,
+                                topicId: Number(topicId), // Always store as number to avoid type mismatches
+                                timestamp: new Date().toISOString()
+                            });
+                            profileService.updateProgress(activeProfile.studentId, { unfamiliarPool: activeProfile.unfamiliarPool });
+                        }
+                    }
+                } else if (isNotFamiliar && q.id == null) {
+                    // Generated question — inform user it can't be saved to the unfamiliar pool
+                    console.warn('Skipped adding generated question to unfamiliar pool (no CSV id).');
+                }
+
+                const accentColor = isNotFamiliar ? 'var(--warning, #f59e0b)' : 'var(--error)';
+                const titleText = isNotFamiliar
+                    ? (q.id != null ? 'Concept Logged' : "Note: Generated Question")
+                    : 'Incorrect';
+                const subtitleExtra = (isNotFamiliar && q.id == null)
+                    ? `<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:10px;">Generated circuit questions can't be saved to the Unfamiliar pool — only static theory questions can.</p>`
+                    : '';
+
+                feedbackOverlay.style.borderTopColor = accentColor;
                 feedbackOverlay.innerHTML = `
-                    <h2 style="color:var(--error); text-transform:uppercase; letter-spacing:1px; margin:0;">Incorrect</h2>
-                    <p style="color:var(--text-main); margin-bottom:10px;">Correct Answer: <strong>${q.correctAnswer}</strong></p>
-                    ${q.explanation ? `<div style="max-width:600px; text-align:center; color:var(--text-muted); font-size:0.9rem;">${q.explanation}</div>` : ''}
-                    <button class="btn btn-secondary" id="next-btn" style="min-width:200px; margin-top:12px; border-color:var(--error); color:var(--error);">GOT IT</button>
+                    <h2 style="color:${accentColor}; text-transform:uppercase; letter-spacing:1px; margin:0;">${titleText}</h2>
+                    ${subtitleExtra}
+                    <p style="color:var(--text-main); margin-bottom:10px;">Correct Answer: <strong>${formatMathText(q.correctAnswer)}</strong></p>
+                    ${q.explanation ? `<div style="max-width:600px; text-align:center; color:var(--text-muted); font-size:0.9rem;">${formatMathText(q.explanation)}</div>` : ''}
+                    <button class="btn btn-secondary" id="next-btn" style="min-width:200px; margin-top:12px; border-color:${accentColor}; color:${accentColor};">GOT IT</button>
                 `;
             }
 

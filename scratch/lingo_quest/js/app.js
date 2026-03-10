@@ -7,7 +7,8 @@ const ROUTES = { // constant object used as maps like buttons on an elevator
     QUIZ: 'quiz',
     RESULT: 'result',
     PROFILES: 'profiles',
-    ADMIN: 'admin'
+    ADMIN: 'admin',
+    UNFAMILIAR: 'unfamiliar'
 };
 
 // Global State
@@ -82,8 +83,8 @@ function render() { // Inside render, code looks at state.view and matches it ag
         if (State.isAdmin) {
             header.innerHTML = `
                 <div class="brand-logo-compact" onclick="location.reload()" style="pointer-events: auto;">
-                    <div class="logo-icon">C</div>
-                    <div class="logo-text">Circuitly</div>
+                    <div class="logo-icon">I</div>
+                    <div class="logo-text">Impulse</div>
                 </div>
                 <div class="stats-container">
                     <div class="stat-pill glass-pill accent-pill">ADMINISTRATOR</div>
@@ -197,9 +198,13 @@ function render() { // Inside render, code looks at state.view and matches it ag
 
         case ROUTES.HOME:
             if (window.Home) {
+                const activeProfile = window.ProfileService.getActiveProfile();
+                const unfamiliarCount = activeProfile && activeProfile.unfamiliarPool ? activeProfile.unfamiliarPool.length : 0;
+
                 component = window.Home({
                     topicProgress: State.topicProgress,
                     revisionPoolCount: State.revisionPool.length,
+                    unfamiliarPoolCount: unfamiliarCount,
                     onStart: (topicId) => {
                         if (State.hearts <= 0) {
                             alert("You have no hearts left! Wait for them to restore.");
@@ -216,6 +221,21 @@ function render() { // Inside render, code looks at state.view and matches it ag
                         }
                         State.activeTopicId = 'revision';
                         State.view = ROUTES.QUIZ;
+                        render();
+                    },
+                    onStartUnfamiliar: () => {
+                        State.view = ROUTES.UNFAMILIAR;
+                        render();
+                    }
+                });
+            }
+            break;
+
+        case ROUTES.UNFAMILIAR:
+            if (window.UnfamiliarConceptsModule) {
+                component = window.UnfamiliarConceptsModule({
+                    onExit: () => {
+                        State.view = ROUTES.HOME;
                         render();
                     }
                 });

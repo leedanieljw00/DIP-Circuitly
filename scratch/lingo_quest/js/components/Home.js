@@ -1,4 +1,4 @@
-window.Home = function ({ topicProgress, revisionPoolCount, onStart, onStartRevision }) {
+window.Home = function ({ topicProgress, revisionPoolCount, unfamiliarPoolCount, onStart, onStartRevision, onStartUnfamiliar }) {
     const topics = window.DataService.getTopics();
     const container = document.createElement('div');
     container.className = 'dashboard-container animate-fade-in';
@@ -7,8 +7,8 @@ window.Home = function ({ topicProgress, revisionPoolCount, onStart, onStartRevi
     const header = document.createElement('div');
     header.className = 'dashboard-header';
     header.innerHTML = `
-        <h1 class="brand-title">Circuitly</h1>
-        <p class="brand-motto">Master the flow of energy.</p>
+        <h1 class="brand-title">Impulse</h1>
+        <p class="brand-motto">Mastery in every pulse.</p>
     `;
     container.appendChild(header);
 
@@ -84,33 +84,29 @@ window.Home = function ({ topicProgress, revisionPoolCount, onStart, onStartRevi
 
     // Revision Module Card (Matching Style)
     if (revisionPoolCount > 0) {
-        const revCard = document.createElement('div');
-        revCard.className = 'card-glass';
-        revCard.style.borderColor = 'var(--accent)';
-        revCard.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)';
+        const card = document.createElement('div');
+        card.className = 'card-glass';
+        card.style.borderColor = 'var(--accent)';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
 
-        // Header (ID Badge - using refresh icon)
-        const revBadge = document.createElement('div');
-        revBadge.className = 'topic-id';
-        revBadge.style.background = 'var(--accent)';
-        revBadge.innerHTML = '&#8635;';
-        revCard.appendChild(revBadge);
-
-        // Title
         const title = document.createElement('h3');
         title.style.fontSize = '1.25rem';
         title.style.marginBottom = '8px';
         title.style.fontWeight = '700';
-        title.style.color = 'var(--accent)';
-        title.textContent = "Revision Module";
-        revCard.appendChild(title);
+        title.textContent = 'Revision Module';
+        card.appendChild(title);
 
         const sub = document.createElement('div');
         sub.style.fontSize = '0.85rem';
         sub.style.color = 'var(--text-muted)';
         sub.style.marginBottom = '16px';
         sub.textContent = `${revisionPoolCount} Questions Pending`;
-        revCard.appendChild(sub);
+        card.appendChild(sub);
+
+        const spacer = document.createElement('div');
+        spacer.style.flexGrow = '1';
+        card.appendChild(spacer);
 
         // Action Button
         const btn = document.createElement('button');
@@ -121,10 +117,51 @@ window.Home = function ({ topicProgress, revisionPoolCount, onStart, onStartRevi
             e.stopPropagation();
             onStartRevision();
         };
-        revCard.appendChild(btn);
+        card.appendChild(btn);
 
-        revCard.onclick = () => onStartRevision();
-        grid.appendChild(revCard);
+        card.onclick = () => onStartRevision();
+        grid.insertBefore(card, grid.firstChild);
+    }
+
+    // Unfamiliar Concepts Card
+    if (unfamiliarPoolCount > 0) {
+        const card = document.createElement('div');
+        card.className = 'card-glass';
+        card.style.borderColor = 'var(--warning, #f59e0b)';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+
+        const title = document.createElement('h3');
+        title.style.fontSize = '1.25rem';
+        title.style.marginBottom = '8px';
+        title.style.fontWeight = '700';
+        title.textContent = 'Unfamiliar Concepts';
+        card.appendChild(title);
+
+        const sub = document.createElement('div');
+        sub.style.fontSize = '0.85rem';
+        sub.style.color = 'var(--text-muted)';
+        sub.style.marginBottom = '16px';
+        sub.textContent = `${unfamiliarPoolCount} Concepts to Review`;
+        card.appendChild(sub);
+
+        const spacer = document.createElement('div');
+        spacer.style.flexGrow = '1';
+        card.appendChild(spacer);
+
+        // Action Button
+        const btn = document.createElement('button');
+        btn.className = 'btn-glass-action';
+        btn.style.background = 'linear-gradient(45deg, var(--warning, #f59e0b), var(--error))';
+        btn.textContent = 'Review';
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            onStartUnfamiliar();
+        };
+        card.appendChild(btn);
+
+        card.onclick = () => onStartUnfamiliar();
+        grid.insertBefore(card, grid.firstChild);
     }
 
     container.appendChild(grid);

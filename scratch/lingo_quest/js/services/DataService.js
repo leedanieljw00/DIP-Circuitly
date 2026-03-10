@@ -36,7 +36,8 @@ window.DataService = {
     // Initialize: Fetch CSV
     init: async () => {
         try {
-            const response = await fetch('questions/QuestionBank.csv');
+            const timestamp = new Date().getTime();
+            const response = await fetch(`questions/QuestionBank.csv?t=\${timestamp}`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Failed to load Question Bank CSV');
             const text = await response.text();
             window.DataService.questions = window.DataService.parseCSV(text);
@@ -101,7 +102,9 @@ window.DataService = {
                 optionC: row.optionC,
                 answer: row.answer,
                 image: row.image || null, // Assuming 'image' column exists or defaults to null
-                explanation: row.explanation || null // Assuming 'explanation' column exists or defaults to null
+                explanation: row.explanation || null, // Assuming 'explanation' column exists or defaults to null
+                pdfFile: row.pdfFile || null,
+                pdfPage: row.pdfPage || null
             };
         });
     },
@@ -196,7 +199,9 @@ window.DataService = {
                 options: [row.optionA, row.optionB, row.optionC],
                 correctAnswer: row.answer,
                 image: row.image || null,
-                explanation: row.explanation || null
+                explanation: row.explanation || null,
+                pdfFile: row.pdfFile || null,
+                pdfPage: row.pdfPage || null
             }));
         }
     },
