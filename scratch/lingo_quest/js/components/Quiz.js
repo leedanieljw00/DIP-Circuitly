@@ -1,5 +1,5 @@
-window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExit }) {
-    const questions = customQuestions || window.DataService.getQuestions(topicId);
+window.Quiz = function ({ topicId, onComplete, onExit }) {
+    const questions = window.DataService.getQuestions(topicId);
     let currentIndex = 0;
     let score = 0;
     let sessionTime = 0; // Seconds
@@ -12,82 +12,28 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
         recoveryCount: 0
     };
 
+    // Dynamic Difficulty State
+    let successStreak = 0;
+    let failStreak = 0;
+    let currentDifficulty = 1; // Start on easy (1)
+    const seenQuestionIds = []; // Prevent repeating questions
+
     const container = document.createElement('div');
     container.className = 'dashboard-container animate-slide-in';
     container.style.maxWidth = '800px'; // Limit width for centering
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
-    container.style.height = '100vh'; // Full height for vertical centering effect
-    container.style.justifyContent = 'center';
-
-    // Helper: Format Math Text (Auto-wraps math patterns in delimiters)
-    function formatMathText(text) {
-        if (!text) return "";
-
-        const hasCustomDelimiters = text.includes('$') || text.includes('\\(') || text.includes('\\[') || text.includes('$$');
-
-        // Text replacements for symbols and formatting (do this before catching variables)
-        text = text.replace(/\bInf\b/g, '\\(\\infty\\)');
-        text = text.replace(/\b(?:Mega\s*Ohm|mega\s*ohm|MegaOhm|M\s*Ohm)\b/gi, '\\(\\text{M}\\Omega\\)');
-        text = text.replace(/\b(?:kilo\s*ohm|kiloohm|k\s*Ohm)\b/gi, '\\(\\text{k}\\Omega\\)');
-        text = text.replace(/\b(?:Ohm|ohm)s?\b/g, '\\(\\Omega\\)');
-        text = text.replace(/([A-Za-z0-9_]+)\s*=\s*/g, '$1 = ');
-
-        // Already contains delimiters? Skip auto-wrapping but keep for typesetting
-        if (hasCustomDelimiters) return text;
-
-        // Pattern 1: Exponents like 10^-9 or 2^3 or 10^6
-        const exponentPattern = /(\d+\^\{-?\d+\}|\d+\^-?\d+)/g;
-        text = text.replace(exponentPattern, '\\($1\\)');
-
-        // Pattern 2: Scientific notation like 1.5x10^-3
-        const scientificPattern = /(\d+\.?\d*\s*[x*×]\s*10\^\{-?\d+\}|\d+\.?\d*\s*[x*×]\s*10\^-?\d+)/gi;
-        text = text.replace(scientificPattern, '\\($1\\)');
-
-        // Pattern 3: Square Roots like sqrt(2) or sq(LC)
-        const sqrtPattern = /\bsq(?:rt)?\(([^)]+)\)/g;
-        text = text.replace(sqrtPattern, '\\(\\sqrt{$1}\\)');
-
-        // Pattern 4: Circuit Subscripts (Vph, V_ph, R1, etc.)
-        const underscorePattern = /\b([VvIiRLCZP])_([a-z0-9]+)\b/g;
-        text = text.replace(underscorePattern, '\\($1_{$2}\\)');
-
-        const digitPattern = /\b([VvIiRLCZP])(\d+)\b/g;
-        text = text.replace(digitPattern, '\\($1_{$2}\\)');
-
-        // Whitelist for common compound variables
-        const whitelistPattern = /\b(Vph|Iph|Vrms|Irms|Vline|Iline|Vload|Iload|Vm|Im|Rth|Vth|Rn|In|Zth|Ztr)\b/g;
-        text = text.replace(whitelistPattern, match => `\\(${match[0]}_{${match.substring(1)}}\\)`);
-
-        // Pattern 5: Fractions like A/B or ratio
-        // Now handles previously wrapped expressions like \(V_{m}\)
-        const fractionPattern = /((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)\/\s*((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)/g;
-        text = text.replace(fractionPattern, (match, p1, p2) => {
-            const clean1 = p1.replace(/\\\(/g, '').replace(/\\\)/g, '');
-            const clean2 = p2.replace(/\\\(/g, '').replace(/\\\)/g, '');
-            return `\\(\\frac{${clean1.trim()}}{${clean2.trim()}}\\)`;
-        });
-
-        // Cleanup: merge adjacent math blocks separated by '*' to render as \cdot
-        // Example: \(V_{m}\) * \(\sqrt{2}\) -> \(V_{m} \cdot \sqrt{2}\)
-        text = text.replace(/\\\)\s*\*\s*\\\(/g, ' \\cdot ');
-
-        return text;
-    }
-
-    // Helper: Trigger MathJax typeset
-    function triggerMathTypeset() {
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            // Typeset everything in the container
-            window.MathJax.typesetPromise([container]).catch(err => console.error("MathJax error:", err));
-        }
-    }
+    container.style.height = '100vh';
+    container.style.overflowY = 'auto'; // Enable vertical scrolling
+    container.style.justifyContent = 'center'; // Center vertically
+    container.style.paddingTop = '10px';
+    container.style.paddingBottom = '10px';
 
     // Back Button (Top Left)
     const headerRow = document.createElement('div');
     headerRow.style.width = '100%';
     headerRow.style.display = 'flex';
-    headerRow.style.justifyContent = 'space-between';
+    headerRow.style.justifyContent = 'flex-start'; // Align Left
     headerRow.style.alignItems = 'center';
     headerRow.style.marginBottom = '20px';
 
@@ -97,33 +43,44 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
     backBtn.style.padding = '8px 16px';
     backBtn.style.fontSize = '0.9rem';
     backBtn.onclick = () => {
-        if (confirm('Exit quiz? Progress will be lost.')) {
-            onExit();
-        }
+        onExit();
     };
     headerRow.appendChild(backBtn);
 
-    // Score/Progress Text
+    // Score/Progress Text - Moved to main card to avoid overlap with Stats
     const progressText = document.createElement('div');
     progressText.className = 'text-gradient';
     progressText.style.fontWeight = '700';
+    progressText.style.textAlign = 'center';
+    progressText.style.marginBottom = '5px';
     progressText.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
-    headerRow.appendChild(progressText);
+
+    // Difficulty Text
+    const difficultyText = document.createElement('div');
+    difficultyText.style.textAlign = 'center';
+    difficultyText.style.fontSize = '0.85rem';
+    difficultyText.style.color = 'var(--text-muted)';
+    difficultyText.style.marginBottom = '15px';
+    difficultyText.style.textTransform = 'uppercase';
+    difficultyText.style.letterSpacing = '1px';
 
     container.appendChild(headerRow);
 
     // Main Quiz Card
     const quizCard = document.createElement('div');
     quizCard.className = 'card-glass';
-    quizCard.style.padding = '30px'; // Slightly tighter padding for side-by-side
-    quizCard.style.maxWidth = '100%';
-    quizCard.style.width = '100%';
+    quizCard.style.padding = '20px'; // Reduced padding
+    quizCard.style.display = 'flex';
+    quizCard.style.flexDirection = 'column';
+    quizCard.style.gap = '12px'; // Reduced gap
+    quizCard.style.flexShrink = '0'; // Prevent shrinking in flex container
+    quizCard.style.overflow = 'visible'; // Allow content to flow out if needed (fixes clipping)
     container.appendChild(quizCard);
 
-    // Progress Bar (Always top of card)
+    // Progress Bar
     const rail = document.createElement('div');
     rail.className = 'progress-rail';
-    rail.style.marginBottom = '24px';
+    rail.style.marginBottom = '10px';
 
     const fill = document.createElement('div');
     fill.className = 'progress-fill';
@@ -132,53 +89,50 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
 
     rail.appendChild(fill);
     quizCard.appendChild(rail);
+    quizCard.appendChild(progressText); // Moved here
 
-    // Layout Wrapper (Side-by-side container)
-    const layoutWrapper = document.createElement('div');
-    layoutWrapper.className = 'quiz-layout-wrapper';
-    quizCard.appendChild(layoutWrapper);
-
-    const leftCol = document.createElement('div');
-    leftCol.className = 'quiz-left-col';
-    layoutWrapper.appendChild(leftCol);
-
-    const rightCol = document.createElement('div');
-    rightCol.className = 'quiz-right-col';
-    layoutWrapper.appendChild(rightCol);
-
-    // Question Text (Now in right col)
+    // Question Text
     const questionText = document.createElement('h2');
-    questionText.style.textAlign = 'left'; // Better for side-by-side
-    questionText.style.fontSize = '1.6rem';
-    questionText.style.marginBottom = '10px';
-    questionText.style.lineHeight = '1.4';
-    rightCol.appendChild(questionText);
+    questionText.style.textAlign = 'center';
+    questionText.style.fontSize = '1.2rem'; // Reduced font size
+    questionText.style.marginBottom = '5px';
+    questionText.style.lineHeight = '1.3';
+    quizCard.appendChild(questionText);
 
-    // Image Area (In left col)
+    // Explicitly add a fallback text and a solid background to difficultyText to guarantee visibility
+    difficultyText.innerHTML = "<strong>Loading Difficulty...</strong>";
+    difficultyText.style.background = "rgba(255, 255, 255, 0.1)";
+    difficultyText.style.padding = "5px";
+    difficultyText.style.borderRadius = "5px";
+    quizCard.appendChild(difficultyText);
+
+    // Image Area
     const questionImage = document.createElement('img');
     questionImage.style.maxWidth = '100%';
-    questionImage.style.maxHeight = '450px'; // Allow larger diagrams
+    questionImage.style.maxHeight = '25vh'; // Increased from 15vh (1.5x) height (approx 100-150px)
     questionImage.style.borderRadius = 'var(--border-radius)';
+    questionImage.style.alignSelf = 'center';
     questionImage.style.display = 'none';
-    questionImage.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4)';
-    leftCol.appendChild(questionImage);
+    questionImage.style.boxShadow = '0 8px 20px rgba(0,0,0,0.3)';
+    questionImage.style.objectFit = 'contain'; // Ensure aspect ratio
+    quizCard.appendChild(questionImage);
 
-    // Options Area (In right col)
+    // Options Area
     const optionsContainer = document.createElement('div');
     optionsContainer.style.display = 'grid';
-    optionsContainer.style.gap = '12px';
-    optionsContainer.style.width = '100%';
-    rightCol.appendChild(optionsContainer);
+    optionsContainer.style.gridTemplateColumns = '1fr 1fr'; // 2x2 Layout
+    optionsContainer.style.gap = '8px'; // Compact gap
+    quizCard.appendChild(optionsContainer);
 
-    // Check Button (In right col)
+    // Check Button
     const checkBtn = document.createElement('button');
     checkBtn.className = 'btn btn-primary';
     checkBtn.textContent = 'CHECK ANSWER';
     checkBtn.style.marginTop = '10px';
     checkBtn.style.width = '100%';
-    checkBtn.style.padding = '16px';
-    checkBtn.style.fontSize = '1.1rem';
-    rightCol.appendChild(checkBtn);
+    checkBtn.style.padding = '12px';
+    checkBtn.style.fontSize = '1rem';
+    quizCard.appendChild(checkBtn);
 
     // Feedback Overlay (Glass style)
     const feedbackOverlay = document.createElement('div');
@@ -213,7 +167,7 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
         }
 
         const q = questions[currentIndex];
-        questionText.innerHTML = formatMathText(q.prompt);
+        questionText.innerHTML = q.prompt;
 
         // Image
         if (q.image) {
@@ -222,27 +176,26 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
                 : `assets/images/${q.image}`;
             questionImage.src = src;
             questionImage.style.display = 'block';
-            leftCol.style.display = 'flex';
-            layoutWrapper.style.display = 'flex';
-            layoutWrapper.style.flexDirection = '';
-            questionText.style.textAlign = 'left';
-            quizCard.style.maxWidth = '1100px';
         } else {
             questionImage.style.display = 'none';
-            leftCol.style.display = 'none';
-            layoutWrapper.style.display = 'block'; // Use block for centering
-            layoutWrapper.style.flexDirection = 'column';
-            questionText.style.textAlign = 'center';
-            quizCard.style.maxWidth = '800px';
         }
-
-        // Trigger math rendering immediately
-        setTimeout(triggerMathTypeset, 0);
 
         // Progress
         const p = (currentIndex / questions.length) * 100;
         fill.style.width = `${p}%`;
         progressText.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+
+        // Difficulty update
+        let diffLabel = "EASY";
+        let diffColor = "var(--text-main)";
+        if (q.difficulty == 2) {
+            diffLabel = "MEDIUM";
+            diffColor = "var(--warning)"; // Optional: Add a medium color
+        } else if (q.difficulty >= 3) {
+            diffLabel = "HARD";
+            diffColor = "var(--error)";
+        }
+        difficultyText.innerHTML = `<span style="opacity: 0.7;">Level ${q.difficulty || 1}:</span> <strong style="color: ${diffColor};">${diffLabel}</strong>`;
 
         // Options
         optionsContainer.innerHTML = '';
@@ -260,10 +213,15 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
         q.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'btn btn-secondary'; // Base style
-            btn.innerHTML = formatMathText(opt);
-            btn.style.justifyContent = 'flex-start'; // Align text left
-            btn.style.textAlign = 'left';
+            btn.innerHTML = opt;
+            btn.style.justifyContent = 'center'; // Center text in 2x2
+            btn.style.textAlign = 'center';
             btn.style.width = '100%';
+            btn.style.minHeight = '45px'; // Compact touch target
+            btn.style.padding = '6px'; // Minimal padding
+            btn.style.fontSize = '0.9rem'; // Slightly smaller font
+            btn.style.whiteSpace = 'normal'; // Allow wrapping
+            btn.style.lineHeight = '1.1';
 
             btn.onclick = () => {
                 if (isAnswered) return;
@@ -287,34 +245,15 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
             optionsContainer.appendChild(btn);
         });
 
-        // Add "Not familiar with the concept" option
-        const notFamiliarBtn = document.createElement('button');
-        notFamiliarBtn.className = 'btn btn-secondary';
-        notFamiliarBtn.innerHTML = "Not familiar with the concept";
-        notFamiliarBtn.style.justifyContent = 'flex-start';
-        notFamiliarBtn.style.textAlign = 'left';
-        notFamiliarBtn.style.width = '100%';
-        notFamiliarBtn.style.marginTop = '8px';
+        // Track that we've seen this question
+        if (q.id) {
+            seenQuestionIds.push(q.id);
+        }
 
-        notFamiliarBtn.onclick = () => {
-            if (isAnswered) return;
-
-            // Reset styling
-            Array.from(optionsContainer.children).forEach(c => {
-                c.style.borderColor = 'rgba(255,255,255,0.1)';
-                c.style.background = 'rgba(255,255,255,0.05)';
-                c.style.boxShadow = 'none';
-            });
-
-            notFamiliarBtn.style.borderColor = 'var(--warning, #f59e0b)';
-            notFamiliarBtn.style.background = 'rgba(245, 158, 11, 0.15)';
-            notFamiliarBtn.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.2)';
-
-            selectedOption = "NOT_FAMILIAR";
-            checkBtn.disabled = false;
-            checkBtn.style.opacity = '1';
-        };
-        optionsContainer.appendChild(notFamiliarBtn);
+        // Render math equations if MathJax is available
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([quizCard]).catch(err => console.warn('MathJax error:', err));
+        }
     }
 
     // Review Screen Logic
@@ -369,12 +308,12 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
             }
 
             card.innerHTML = `
-                <div style="font-weight:700; margin-bottom:12px; color:var(--text-main); font-size:1.1rem;">Question: ${formatMathText(item.question)}</div>
+                <div style="font-weight:700; margin-bottom:12px; color:var(--text-main); font-size:1.1rem;">Question: ${item.question}</div>
                 ${imgHTML}
-                <div style="margin-bottom:8px; color:var(--error);">Your Answer: ${formatMathText(item.userAnswer)}</div>
-                <div style="margin-bottom:16px; color:var(--accent);">Correct Answer: ${formatMathText(item.correctAnswer)}</div>
+                <div style="margin-bottom:8px; color:var(--error);">Your Answer: ${item.userAnswer}</div>
+                <div style="margin-bottom:16px; color:var(--accent);">Correct Answer: ${item.correctAnswer}</div>
                 <div style="background:rgba(255,255,255,0.05); padding:16px; border-radius:8px; font-size:0.9rem; line-height:1.5; color:var(--text-muted);">
-                    <strong>Explanation:</strong> ${formatMathText(item.explanation) || "No explanation provided."}
+                    <strong>Explanation:</strong> ${item.explanation || "No explanation provided."}
                 </div>
             `;
             list.appendChild(card);
@@ -387,10 +326,13 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
         finishBtn.style.margin = '40px auto';
         finishBtn.style.width = '100%';
         finishBtn.style.maxWidth = '300px';
-        finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total, timeSpent: sessionTime, incorrectResponses });
+        finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total, timeSpent: sessionTime });
         container.appendChild(finishBtn);
 
-        triggerMathTypeset();
+        // Render math equations in review screen
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([container]).catch(err => console.warn('MathJax error:', err));
+        }
     }
 
     checkBtn.onclick = () => {
@@ -417,19 +359,50 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
                     adaptiveStats.recoveryCount++;
                 }
 
+                // Dynamic Difficulty Logic (Streak)
+                successStreak++;
+                failStreak = 0;
+                if (successStreak >= 3 && currentDifficulty < 3) {
+                    currentDifficulty++;
+                    // You leveled up! Swap ALL remaining questions for harder ones
+                    console.log(`Level Up to Difficulty ${currentDifficulty}! Swapping remaining questions.`);
+                    for (let i = currentIndex + 1; i < questions.length; i++) {
+                        const harderQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
+                        if (harderQ) {
+                            questions[i] = harderQ;
+                            seenQuestionIds.push(harderQ.id); // Prevent picking the same one in this loop
+                        }
+                    }
+                    successStreak = 0; // Reset streak after level up
+                }
+
                 feedbackOverlay.style.borderTopColor = 'var(--accent)';
                 feedbackOverlay.innerHTML = `
                     <h2 style="color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin:0;">Correct!</h2>
                     <button class="btn btn-primary" id="next-btn" style="min-width:200px;">CONTINUE</button>
                 `;
-                if (onCorrect) onCorrect(q.id);
             } else {
                 if (Number(topicId) === 8) adaptiveStats.wrongCount++;
 
+                // Dynamic Difficulty Logic (Strike)
+                failStreak++;
+                successStreak = 0;
+                if (failStreak >= 2 && currentDifficulty > 1) {
+                    currentDifficulty--;
+                    // You leveled down! Swap ALL remaining questions for easier ones
+                    console.log(`Level Down to Difficulty ${currentDifficulty}. Swapping remaining questions.`);
+                    for (let i = currentIndex + 1; i < questions.length; i++) {
+                        const easierQ = window.DataService.getQuestionByDifficulty(topicId, currentDifficulty, seenQuestionIds);
+                        if (easierQ) {
+                            questions[i] = easierQ;
+                            seenQuestionIds.push(easierQ.id); // Prevent picking the same one in this loop
+                        }
+                    }
+                    failStreak = 0; // Reset strike after level down
+                }
+
                 incorrectResponses.push({
-                    id: q.id,
                     question: q.prompt,
-                    options: q.options,
                     image: q.image,
                     userAnswer: isNotFamiliar ? "Not familiar with the concept" : selectedOption,
                     correctAnswer: q.correctAnswer,
@@ -502,11 +475,14 @@ window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExi
             };
 
             feedbackOverlay.style.transform = 'translateY(0)';
-            triggerMathTypeset();
+
+            // Render math equations in feedback if MathJax is available
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([feedbackOverlay]).catch(err => console.warn('MathJax error:', err));
+            }
         }
     };
 
     renderQuestion();
-    setTimeout(triggerMathTypeset, 50); // Initial load
     return container;
 };

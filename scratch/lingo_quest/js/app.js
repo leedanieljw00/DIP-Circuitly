@@ -253,7 +253,7 @@ function render() { // Inside render, code looks at state.view and matches it ag
                         const j = Math.floor(Math.random() * (i + 1));
                         [pool[i], pool[j]] = [pool[j], pool[i]];
                     }
-                    quizQuestions = pool.slice(0, 15);
+                    quizQuestions = pool.slice(0, 10);
                 }
 
                 component = window.Quiz({

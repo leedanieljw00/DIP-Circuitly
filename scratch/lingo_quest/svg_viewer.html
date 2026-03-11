@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>SVG Debug Viewer</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .card img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+
+        .card p {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SVG Generator Debug Viewer</h1>
+    <div id="container" class="grid"></div>
+
+    <script src="js/services/TestCircuitGenerator.js"></script>
+    <script src="js/services/ThreePhaseCircuitGenerator.js"></script>
+
+    <script>
+        const container = document.getElementById('container');
+
+        function renderCard(title, q) {
+            const div = document.createElement('div');
+            div.className = 'card';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = title;
+            div.appendChild(h3);
+
+            if (q && q.image) {
+                const img = document.createElement('img');
+                img.src = q.image;
+                div.appendChild(img);
+            }
+            container.appendChild(div);
+        }
+
+        // TestCircuitGenerator
+        const topics = [
+            'kirchhoff', 'dc_eq_res', 'dc_circuits', 'dc_thevenin', 'dc_mna', 'dc_two_port',
+            'ac_imp', 'ac_circuits', 'ac_thevenin', 'ac_power', 'ac_multi', 'first_order',
+            'transfer_func', 'impulse', 'natural_freq', 'bode', 'state_eq', 'trans_no_ic',
+            'trans_ic_dc', 'gen_trans', 'mna_lti', 'lti_two_port', 'op_amp'
+        ];
+
+        topics.forEach(t => {
+            try {
+                const q = window.TestCircuitGenerator.generate(t);
+                renderCard("Test: " + t, q);
+            } catch (e) {
+                renderCard("Test: " + t + " (ERROR: " + e.message + ")");
+            }
+        });
+
+        // ThreePhaseGenerator
+        for (let i = 0; i < 5; i++) {
+            try {
+                const q = window.ThreePhaseCircuitGenerator.generate();
+                renderCard("ThreePhase " + (i + 1), q);
+            } catch (e) {
+                renderCard("ThreePhase " + (i + 1) + " (ERROR)");
+            }
+        }
+    </script>
+</body>
+
+</html>
