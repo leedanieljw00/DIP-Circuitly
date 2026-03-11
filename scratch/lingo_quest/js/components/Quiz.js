@@ -249,6 +249,11 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         if (q.id) {
             seenQuestionIds.push(q.id);
         }
+
+        // Render math equations if MathJax is available
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([quizCard]).catch(err => console.warn('MathJax error:', err));
+        }
     }
 
     // Review Screen Logic
@@ -323,6 +328,11 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
         finishBtn.style.maxWidth = '300px';
         finishBtn.onclick = () => onComplete({ score, correctCount, totalQuestions: total, timeSpent: sessionTime });
         container.appendChild(finishBtn);
+
+        // Render math equations in review screen
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([container]).catch(err => console.warn('MathJax error:', err));
+        }
     }
 
     checkBtn.onclick = () => {
@@ -433,6 +443,11 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             };
 
             feedbackOverlay.style.transform = 'translateY(0)';
+
+            // Render math equations in feedback if MathJax is available
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([feedbackOverlay]).catch(err => console.warn('MathJax error:', err));
+            }
         }
     };
 

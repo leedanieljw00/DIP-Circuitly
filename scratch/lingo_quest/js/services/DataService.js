@@ -107,6 +107,16 @@ window.DataService = {
                 }
             }
 
+            // Fix Answer Mapping if it's a single letter (a, b, c, d)
+            let finalAnswer = row.answer;
+            if (finalAnswer && finalAnswer.length === 1) {
+                const char = finalAnswer.toLowerCase();
+                if (char === 'a') finalAnswer = row.optionA;
+                else if (char === 'b') finalAnswer = row.optionB;
+                else if (char === 'c') finalAnswer = row.optionC;
+                else if (char === 'd' && row.optionD) finalAnswer = row.optionD;
+            }
+
             // Map types and structure
             return {
                 id: Number(row.id),
@@ -115,7 +125,8 @@ window.DataService = {
                 optionA: row.optionA,
                 optionB: row.optionB,
                 optionC: row.optionC,
-                answer: row.answer,
+                optionD: row.optionD || null,
+                answer: finalAnswer,
                 image: row.image || null,
                 explanation: row.explanation || null,
                 difficulty: diffNum
@@ -136,9 +147,10 @@ window.DataService = {
         // Helper to randomize options if safe
         const mapAndRandomize = (row) => {
             let opts = [row.optionA, row.optionB, row.optionC];
-
-            // Inject 4th option if missing (Static questions only have 3)
-            if (opts.length < 4) {
+            if (row.optionD) {
+                opts.push(row.optionD);
+            } else if (opts.length < 4) {
+                // Inject 4th option if missing (Static questions only have 3)
                 opts.push("None of the above");
             }
 
@@ -183,7 +195,7 @@ window.DataService = {
         // Shuffle ALL available questions first
         shuffle(questions);
 
-        const MAX_QUESTIONS = 15;
+        const MAX_QUESTIONS = 10;
 
         // If Three-Phase Topic (8), ensure 30% Theory (Static) and 70% Circuits (Generated)
         if (Number(topicId) === 8 && window.ThreePhaseCircuitGenerator) {
