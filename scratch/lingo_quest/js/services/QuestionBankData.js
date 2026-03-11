@@ -3,7 +3,7 @@ window.QuestionBankData = `id,topicId,question,optionA,optionB,optionC,optionD,a
 102,1,"Calculate the current going through the voltage source (a) when the switch is in position 1, and (b) when the switch is in position 2.","\\((a) 300\\,\\text{mA}, (b) 400\\,\\text{mA}\\)","\\((a) 800\\,\\text{mA}, (b) 300\\,\\text{mA}\\)","\\((a) 400\\,\\text{mA}, (b) 300\\,\\text{mA}\\)","\\((a) 400\\,\\text{mA}, (b) 300\\,\\text{mA}\\)",d,https://raw.github.com/DinYeo/DuolingoforCA/main/W1_BasicLawsEasyQ2.png?raw=true,,1
 103,1,Determine the value of R in ohms. (Please round answer to 2 decimal places).,1.3,1.23,1.25,1.25,d,https://raw.github.com/DinYeo/DuolingoforCA/main/W1_BasicLawsEasyQ3.png?raw=true,,1
 104,1,"According to \\,\\(\\Omega\\)'s Law, if the resistance in a circuit is doubled while the voltage remains constant, what happens to the current?",The current doubles.,The current remains the same.,The current is halved.,The current is halved.,c,,,1
-105,1,Kirchhoff’s Current Law (KCL) is a direct consequence of which fundamental physical principle?,Conservation of Energy,Conservation of Charge,Conservation of Momentum,Conservation of Charge,b,,,1
+105,1,Kirchhoff’s Current Law (KCL) is a direct consequence of which fundamental physical principle?,Conservation of Energy,Conservation of Charge,Conservation of Momentum,Conservation of Mass,b,,,1
 106,1,"In any closed loop of a circuit, the algebraic sum of all voltages (potential differences) must be equal to:",Zero,The supply voltage,The sum of the resistances,Zero,a,,,1
 107,1,"Using the passive sign convention, if the calculated power P=VI for a specific component is negative, what does this indicate?",The component is consuming energy.,The component is supplying energy to the circuit.,The component is behaving as a short circuit.,The component is supplying energy to the circuit.,b,,,1
 108,1,A Thevenin equivalent circuit consists of which two elements?,A current source in parallel with a resistor.,A voltage source in series with a resistor.,A voltage source in parallel with a capacitor.,A voltage source in series with a resistor.,b,,,1
@@ -61,7 +61,7 @@ window.QuestionBankData = `id,topicId,question,optionA,optionB,optionC,optionD,a
 403,4,What is the configuration of the op-amp shown in the figure?,Non-inverting amplifier,Differential amplifier,Inverting amplifier,Inverting amplifier,C,https://github.com/raphuniy1s1/Circuit_Analysis/blob/main/Inv.png?raw=true,,2
 404,4,Which op amp configuration provides a positive gain without inverting the input signal?,Non-inverting amplifier,Differential amplifier,Inverting amplifier,Non-inverting amplifier,C,,,2
 405,4,What is the configuration of the op-amp shown in the figure?,Differential amplifier,Non-inverting amplifier,Inverting amplifier,Non-inverting amplifier,C,https://github.com/raphuniy1s1/Circuit_Analysis/blob/main/NonInv.png?raw=true,,2
-406,4,Which component is essential for setting the gain in an inverting op amp configuration?,Capacitor,Diode,Resistor,Resistor,B,,,2
+64,4,Which component is essential for setting the gain in an inverting op amp configuration?,Capacitor,Diode,Resistor,Resistor,B,,,2
 407,4,What happens if the op amp is used without feedback?,It acts as comparator,It amplifies with controlled gain,It becomes a voltage follower,It acts as comparator,3/s,,,2
 408,4,What is the main purpose of negative feedback in op amp circuits?,Eliminate output voltage,Increase open-loop gain,Stabilize and control closed-loop gain,Stabilize and control closed-loop gain,1/(s+5),,,2
 409,4,An op-amp is best modeled as which type of dependent source?,Current-controlled current source,Voltage-controlled current source,Voltage-controlled voltage source,Voltage-controlled voltage source,s/(s^2+16),,,2
@@ -96,7 +96,7 @@ window.QuestionBankData = `id,topicId,question,optionA,optionB,optionC,optionD,a
 318,3,Frequency response analysis studies circuit behavior as:,Time varies,Resistance varies,Frequency varies,Frequency varies,D,,,2
 319,3,"In an RC low-pass filter, output is taken across the:",Resistor,Capacitor,Source,Capacitor,A,,,2
 320,3,The total response of a linear circuit equals the sum of:,DC and AC,Input and output,Transient and steady-state,Transient and steady-state,B,,,2
-601,6,A transfer function H(s) is defined as:,Vin(s) / Vout(s),"Y(s) / X(s) , where Y is o/p, X is i/p",I(s) / V(s) ,"Y(s) / X(s) , where Y is o/p, X is i/p",A,,,2
+99: 601,6,A transfer function H(s) is defined as:,Vin(s) / Vout(s),"Y(s) / X(s) , where Y is o/p, X is i/p",I(s) / V(s) ,"Y(s) / X(s) , where Y is o/p, X is i/p",A,,,2
 602,6,"If a pole lies in the Open Left Half Plane, the response is",Exponentially Decaying Sinusoid,Exponential Decay,Exponentially Growing Sinusoid,Exponential Decay,C,,,2
 603,6,"For a simple RC circuit, if Vin(s) is applied to a series R and C (output across C) the transfer function H(s) = Vc(s) / Vin(s) is:",1 / ( sRC + 1),sRC / (sRC + 1),R / (sRC + 1),1 / ( sRC + 1),A,,,2
 604,6,"In a two-port network, the transfer admittance Y21(s) is defined as:",V2(s) / I1(s) with V2 = 0,I2(s) / V2(s) with V2 = 0,V1(s) / I2(s) with I1 = 0,I2(s) / V2(s) with V2 = 0,B,,,2
@@ -129,48 +129,11 @@ window.QuestionBankData = `id,topicId,question,optionA,optionB,optionC,optionD,a
 711,7,A current is given by i(t) = 5 cos(377t). What is the frequency f in Hertz?,50 Hz,60 Hz,377 Hz,60 Hz,,,,1
 712,7,"A voltage source v(t) = 12 + 10 cos(2t) V is connected to a Series RL circuit (R=4, L=2). Calculate the DC component of the resulting current.",3.0 A,12.0 A,"\\(12.0\\,\\text{A}\\)",3.0 A,,,,2
 713,7,"For the same circuit (R=4, L=2) and input v(t) = 12 + 10 cos(2t), calculate the AC component of the current in phasor form.",\\(2.5 \\angle 0^\\circ A\\),\\(1.77 \\angle -45^\\circ A\\),\\(1.77 \\angle 45^\\circ A\\),\\(1.77 \\angle -45^\\circ A\\),,,,2
-714,7,Calculate the Total RMS value of the mixed current signal i(t) = 3 + 4 cos(t) A.,5.0 A,3.5 A,4.12 A,4.12 A,,,,3
-715,7,"A resistor R=5 \\,\\(\\Omega\\) is fed by a current i(t) = 2 + 5 cos(10t) A. Calculate the Total Average Power absorbed.",45 W,82.5 W,145 W,82.5 W,,,,3
-716,7,"Find the total energy W dissipated by a 10 \\,\\(\\Omega\\) resistor over 1 second if the current is i(t) = \\(5\\,\\text{A}\\) (DC).",25 J,50 J,250 J,250 J,,,,1
-717,7,"A source v(t) = 20 + 20 cos(100t) is applied across a Capacitor C=\\(1\\,\\text{mF}\\). What is the steady-state current i(t)?",20 mA,0:00,-2 sin(100t) A,-2 sin(100t) A,,,,1
+712: 714,7,Calculate the Total RMS value of the mixed current signal i(t) = 3 + 4 cos(t) A.,5.0 A,3.5 A,4.12 A,4.12 A,,,,3
+713: 715,7,"A resistor R=5 \\,\\(\\Omega\\) is fed by a current i(t) = 2 + 5 cos(10t) A. Calculate the Total Average Power absorbed.",45 W,82.5 W,145 W,82.5 W,,,,3
+714: 716,7,"Find the total energy W dissipated by a 10 \\,\\(\\Omega\\) resistor over 1 second if the current is i(t) = \\(5\\,\\text{A}\\) (DC).",25 J,50 J,250 J,250 J,,,,1
+715: 717,7,"A source v(t) = 20 + 20 cos(100t) is applied across a Capacitor C=\\(1\\,\\text{mF}\\). What is the steady-state current i(t)?",20 mA,0:00,-2 sin(100t) A,-2 sin(100t) A,,,,1
 718,7,"Two voltage sources are in series: v1(t)=\\(10\\,\\text{V}\\) (DC) and v2(t)=10cos(t) V (AC). If measured by a standard DC Voltmeter, what will the reading be?",0 V,10 V,17.07 V,10 V,B,,,2
 719,7,"For a signal v(t) = Vm cos(\\(\\Omega\\) t), what is the ratio of the Maximum Instantaneous Power to the Average Power absorbed by a resistor?",1,1.414,2,2,B,,,3
 720,7,Why is the current written as i(t)= \\(I_{DC}\\) + \\(I_{AC}\\) cos(\\(\\Omega\\) t+\\(\\phi\\) )?,Because resistors require two currents,Because capacitors only respond to AC,Because DC and AC sources affect the circuit independently,Because DC and AC sources affect the circuit independently,A,,,1
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,A,,,
-,,,,,,,D,,,
-,,,,,,,A,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,C,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,B,,,
-,,,,,,,B,,,
-,,,,,,,A,,,
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,C,,,
-,,,,,,,B,,,
-,,,,,,,C,,,
-,,,,,,,D,,,
-`;
+\`;

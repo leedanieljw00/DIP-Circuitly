@@ -3,7 +3,7 @@ id,topicId,question,optionA,optionB,optionC,optionD,answer,image,explanation,dif
 102,1,"Calculate the current going through the voltage source (a) when the switch is in position 1, and (b) when the switch is in position 2.","\((a) 300\,\text{mA}, (b) 400\,\text{mA}\)","\((a) 800\,\text{mA}, (b) 300\,\text{mA}\)","\((a) 400\,\text{mA}, (b) 300\,\text{mA}\)","\((a) 400\,\text{mA}, (b) 300\,\text{mA}\)",d,https://raw.github.com/DinYeo/DuolingoforCA/main/W1_BasicLawsEasyQ2.png?raw=true,,1
 103,1,Determine the value of $R$ in ohms. (Please round answer to 2 decimal places).,1.3,1.23,1.25,1.25,d,https://raw.github.com/DinYeo/DuolingoforCA/main/W1_BasicLawsEasyQ3.png?raw=true,,1
 104,1,"According to Ohm's Law, if the resistance in a circuit is doubled while the voltage remains constant, what happens to the current?",The current doubles.,The current remains the same.,The current is halved.,The current is halved.,c,,,1
-105,1,Kirchhoff's Current Law (KCL) is a direct consequence of which fundamental physical principle?,Conservation of Energy,Conservation of Charge,Conservation of Momentum,Conservation of Charge,b,,,1
+105,1,Kirchhoff's Current Law (KCL) is a direct consequence of which fundamental physical principle?,Conservation of Energy,Conservation of Charge,Conservation of Momentum,Conservation of Mass,B,,,1
 106,1,"In any closed loop of a circuit, the algebraic sum of all voltages (potential differences) must be equal to:",Zero,The supply voltage,The sum of the resistances,Zero,a,,,1
 107,1,"Using the passive sign convention, if the calculated power P=VI for a specific component is negative, what does this indicate?",The component is consuming energy.,The component is supplying energy to the circuit.,The component is behaving as a short circuit.,The component is supplying energy to the circuit.,b,,,1
 108,1,A Thevenin equivalent circuit consists of which two elements?,A current source in parallel with a resistor.,A voltage source in series with a resistor.,A voltage source in parallel with a capacitor.,A voltage source in series with a resistor.,b,,,1
@@ -81,7 +81,7 @@ id,topicId,question,optionA,optionB,optionC,optionD,answer,image,explanation,dif
 303,3,"For a charging RC circuit with a DC source, vC(t)\(v_C\)(t)vCï¿½ï¿½ï¿½(t)",Increase linearly,Increase exponentially,Oscillate,Picture,B,,,2
 304,3,"An RL circuit has R=5 \(\Omega\) R=\(5\,\(\Omega\)\)R=5\(\Omega\) , L=2 HL=\(2\,\text{H}\)L=\(2\,\text{H}\). What is the time constant?",0.1 s,0.4 s,2.5 s,0.4 s,D,,,2
 305,3,Which statement is always true for an ideal inductor?,Voltage is continuous,Current is continuous,Power is continuous,Current is continuous,B,,,2
-306,3,"In an RL circuit switched at t=0t=0t=0, iL(0+)\(i_L\)(0^+)iLï¿½ï¿½ï¿½(0",Steady-state value,Infinite,\(Equal to iL(0ï¿½ï¿½ï¿½)i_L(0^-)iLï¿½ï¿,\(Equal to iL(0ï¿½ï¿½ï¿½)i_L(0^-)iLï¿½ï¿,C,,,2
+306,3,"In an RL circuit switched at t=0t=0t=0, iL(0+)\(i_L\)(0^+)iLï¿½ï¿½ï¿½(0",Steady-state value,Infinite,\(Equal to iL(0ï¿½ï¿½ï¿½)i_L(0^-)iLï¿½ï¿½,\(Equal to iL(0ï¿½ï¿½ï¿½)i_L(0^-)iLï¿½ï¿½,C,,,2
 307,3,A series RLC circuit is underdamped when:,\(R2>4L/CR^2>4L/CR2>4L/C\),\(R2=4L/CR^2=4L/CR2=4L/C\),\(R2<4L/CR^2<4L/CR2<4L/C\),\(R2<4L/CR^2<4L/CR2<4L/C\),A,,,2
 308,3,The natural response of a circuit is due to:,External sources,Initial stored energy,AC excitation,Initial stored energy,B,,,2
 309,3,Which is required for a second-order transient response?,One resistor,One capacitor,One inductor and one capacitor,One inductor and one capacitor,C,,,2
@@ -90,7 +90,7 @@ id,topicId,question,optionA,optionB,optionC,optionD,answer,image,explanation,dif
 312,3,\(The phasor of v(t)=10cosï¿½ï¿½ï¿½(100t+30ï¿½ï¿½ï¿½)v(t)=10\cos(100t+30^\circ)v(t)=10cos(100t+,\(10ï¿½ï¿½ï¿½30ï¿½ï¿½ï¿½10ï¿½ï¿½ï¿½30,\(10ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½30ï¿½ï¿½ï¿½10ï¿½ï¿½ï¿½,\(5ï¿½ï¿½ï¿½30ï¿½ï¿½ï¿½5ï¿½ï¿½ï¿½3,\(10ï¿½ï¿½ï¿½30ï¿½ï¿½ï¿½10ï¿½ï¿½ï¿½30,D,,,2
 313,3,The impedance of a capacitor is:,\(j\Omega Cj\omega Cj\Omega C\),\(1/(j\Omega C)1/(j\omega C)1/(j\Omega C)\),\(\Omega C\omega C\Omega C\),\(1/(j\Omega C)1/(j\omega C)1/(j\Omega C)\),C,,,2
 314,3,The impedance of an inductor is:,\(1/(j\Omega L)1/(j\omega L)1/(j\Omega L)\),\(\Omega L\omega L\Omega L\),\(j\Omega Lj\omega Lj\Omega L\),\(j\Omega Lj\omega Lj\Omega L\),B,,,2
-315,3,"In a purely capacitive circuit, current:",Lags voltage by 90ï¿,Leads voltage by 90ï¿,Is in phase,Leads voltage by 90ï¿,B,,,2
+315,3,"In a purely capacitive circuit, current:",Lags voltage by 90ï¿½,Leads voltage by 90ï¿½,Is in phase,Leads voltage by 90ï¿½,B,,,2
 316,3,The average power consumed by a pure inductor is:,Maximum,Reactive only,Zero,Zero,A,,,2
 317,3,Power factor is defined as:,Q/SQ/SQ/S,\(cosï¿½ï¿½ï¿½\theta \cos\thetacos\t,Vrms/IrmsV_{rms}/I_{rms}Vrmsï¿½ï¿½ï¿½/I,\(cosï¿½ï¿½ï¿½\theta \cos\thetacos\t,C,,,2
 318,3,Frequency response analysis studies circuit behavior as:,Time varies,Resistance varies,Frequency varies,Frequency varies,D,,,2

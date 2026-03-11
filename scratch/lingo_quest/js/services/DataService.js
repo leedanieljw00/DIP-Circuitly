@@ -147,13 +147,19 @@ window.DataService = {
 
         // Helper to randomize options if safe
         const mapAndRandomize = (row) => {
-            let opts = [row.optionA, row.optionB, row.optionC];
-            if (row.optionD) {
-                opts.push(row.optionD);
-            } else if (opts.length < 4) {
-                // Inject 4th option if missing (Static questions only have 3)
-                opts.push("None of the above");
+            let uniqueOpts = new Set();
+            [row.optionA, row.optionB, row.optionC, row.optionD].forEach(opt => {
+                if (opt) uniqueOpts.add(opt);
+            });
+
+            // Ensure 4 options
+            const placeholders = ["None of the above", "Dependent on frequency", "All of the above", "Indeterminate"];
+            let pIdx = 0;
+            while (uniqueOpts.size < 4 && pIdx < placeholders.length) {
+                uniqueOpts.add(placeholders[pIdx++]);
             }
+
+            let opts = Array.from(uniqueOpts);
 
             // Check for positional answers (e.g. "Both A and B", "All of the above")
             // If found, preserve order.

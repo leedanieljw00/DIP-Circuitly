@@ -1,5 +1,10 @@
-window.Quiz = function ({ topicId, onComplete, onExit }) {
-    const questions = window.DataService.getQuestions(topicId);
+window.Quiz = function ({ topicId, customQuestions, onCorrect, onComplete, onExit }) {
+    let questions = [];
+    if (customQuestions && customQuestions.length > 0) {
+        questions = customQuestions;
+    } else {
+        questions = window.DataService.getQuestions(topicId);
+    }
     let currentIndex = 0;
     let score = 0;
     let sessionTime = 0; // Seconds
@@ -157,6 +162,61 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
     let isAnswered = false;
     let correctCount = 0; // New tracking
     const incorrectResponses = [];
+
+    // Helper to format math text
+    function formatMathText(text) {
+        if (!text) return "";
+
+        const hasCustomDelimiters = text.includes('$') || text.includes('\\(') || text.includes('\\[') || text.includes('$$');
+
+        // Text replacements for symbols and formatting (do this before catching variables)
+        text = text.replace(/\bInf\b/g, '\\(\\infty\\)');
+        text = text.replace(/\b(?:Mega\s*Ohm|mega\s*ohm|MegaOhm|M\s*Ohm)\b/gi, '\\(\\text{M}\\Omega\\)');
+        text = text.replace(/\b(?:kilo\s*ohm|kiloohm|k\s*Ohm)\b/gi, '\\(\\text{k}\\Omega\\)');
+        text = text.replace(/\b(?:Ohm|ohm)s?\b/g, '\\(\\Omega\\)');
+        text = text.replace(/([A-Za-z0-9_]+)\s*=\s*/g, '$1 = ');
+
+        // Already contains delimiters? Skip auto-wrapping but keep for typesetting
+        if (hasCustomDelimiters) return text;
+
+        // Pattern 1: Exponents like 10^-9 or 2^3 or 10^6
+        const exponentPattern = /(\d+\^\{-?\d+\}|\d+\^-?\d+)/g;
+        text = text.replace(exponentPattern, '\\($1\\)');
+
+        // Pattern 2: Scientific notation like 1.5x10^-3
+        const scientificPattern = /(\d+\.?\d*\s*[x*×]\s*10\^\{-?\d+\}|\d+\.?\d*\s*[x*×]\s*10\^-?\d+)/gi;
+        text = text.replace(scientificPattern, '\\($1\\)');
+
+        // Pattern 3: Square Roots like sqrt(2) or sq(LC)
+        const sqrtPattern = /\bsq(?:rt)?\(([^)]+)\)/g;
+        text = text.replace(sqrtPattern, '\\(\\sqrt{$1}\\)');
+
+        // Pattern 4: Circuit Subscripts (Vph, V_ph, R1, etc.)
+        const underscorePattern = /\b([VvIiRLCZP])_([a-z0-9]+)\b/g;
+        text = text.replace(underscorePattern, '\\($1_{$2}\\)');
+
+        const digitPattern = /\b([VvIiRLCZP])(\d+)\b/g;
+        text = text.replace(digitPattern, '\\($1_{$2}\\)');
+
+        // Whitelist for common compound variables
+        const whitelistPattern = /\b(Vph|Iph|Vrms|Irms|Vline|Iline|Vload|Iload|Vm|Im|Rth|Vth|Rn|In|Zth|Ztr)\b/g;
+        text = text.replace(whitelistPattern, match => '\\(' + match[0] + '_{' + match.substring(1) + '}\\)');
+
+        // Pattern 5: Fractions like A/B or ratio
+        // Now handles previously wrapped expressions like \(V_{m}\)
+        const fractionPattern = /((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)\/\s*((?:[\w\d()]+|\\\([\s\S]*?\\\))\s*)/g;
+        text = text.replace(fractionPattern, (match, p1, p2) => {
+            const clean1 = p1.replace(/\\\(/g, '').replace(/\\\)/g, '');
+            const clean2 = p2.replace(/\\\(/g, '').replace(/\\\)/g, '');
+            return '\\(\\frac{' + clean1.trim() + '}{' + clean2.trim() + '}\\)';
+        });
+
+        // Cleanup: merge adjacent math blocks separated by '*' to render as \cdot
+        // Example: \(V_{m}\) * \(\sqrt{2}\) -> \(V_{m} \cdot \sqrt{2}\)
+        text = text.replace(/\\\)\s*\*\s*\\\(/g, ' \\cdot ');
+
+        return text;
+    }
 
     function renderQuestion() {
         if (currentIndex >= questions.length) {
@@ -354,6 +414,7 @@ window.Quiz = function ({ topicId, onComplete, onExit }) {
             if (isCorrect) {
                 score += 1;
                 correctCount++; // Increment correct count
+                if (onCorrect) onCorrect(q.id);
                 // Adaptive Logic
                 if (Number(topicId) === 8 && adaptiveStats.mode === 'THEORY') {
                     adaptiveStats.recoveryCount++;
